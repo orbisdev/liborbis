@@ -15,6 +15,7 @@
 #include <debugnet.h>
 
 OrbisKeyboardConfig *orbisKeyboardConf=NULL;
+int orbiskeyboard_external_conf=-1;
 uint8_t orbisKeyboardNames[3][256];
 void orbisKeyboardInitKeyNames()
 {
@@ -653,15 +654,47 @@ int orbisKeyboardOpen()
 }
 void orbisKeyboardFinish()
 {
-	if(orbisKeyboardConf!=NULL)
+	if(orbiskeyboard_external_conf!=1)
 	{
-		orbisKeyboardClose();
-		sceSysmoduleUnloadModule(ORBIS_IME_MODULE);
-		orbisKeyboardConf->userId=0;
-		orbisKeyboardConf->orbiskeyboard_initialized=-1;
+		if(orbisKeyboardConf!=NULL)
+		{
+			orbisKeyboardClose();
+			sceSysmoduleUnloadModule(ORBIS_IME_MODULE);
+			orbisKeyboardConf->userId=0;
+			orbisKeyboardConf->orbiskeyboard_initialized=-1;
+			debugNetPrintf(3,"liborbisKeyboard finished\n");
+		
+		}
 	}
 	
 }
+int orbisKeyboardSetConf(OrbisKeyboardConfig *conf)
+{
+	if(conf)
+	{
+		orbisKeyboardConf=conf;
+		orbiskeyboard_external_conf=1;
+		return orbisKeyboardConf->orbiskeyboard_initialized;
+	}
+	
+	return 0; 
+}
+int orbisKeyboardInitWithConf(OrbisKeyboardConfig *conf)
+{
+	int ret=orbisKeyboardSetConf(conf);
+	if(ret)
+	{
+		debugNetPrintf(3,"liborbisKeyboard already initialized using configuration external\n");
+		debugNetPrintf(3,"orbiskeyboard_initialized=%d\n",orbisKeyboardConf->orbiskeyboard_initialized);
+		debugNetPrintf(3,"ready to have a lot of fun...\n");
+		return orbisKeyboardConf->orbiskeyboard_initialized;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 int orbisKeyboardInit()
 {
 	int ret;

@@ -89,6 +89,9 @@ typedef struct OrbisKeyboardParam {
 int orbisKeyboardInit();
 void orbisKeyboardFinish();
 int orbisKeyboardOpen();
+OrbisKeyboardConfig * OrbisKeyboardGetConf();
+int orbisKeyboardSetConf(OrbisKeyboardConfig *conf);
+int orbisKeyboardInitWithConf(OrbisKeyboardConfig *conf);
 int orbisKeyboardRegisterUpdateHandler(void *arg,OrbisKeyboardEventHandler handler);
 void orbisKeybordGetSpecialKeys(const OrbisKeyboardEvent *e);
 uint8_t orbisKeyboardGetMsxKey();

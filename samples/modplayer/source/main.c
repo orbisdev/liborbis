@@ -5,6 +5,7 @@
 #include <systemservice.h>
 #include <orbis2d.h>
 #include <orbisPad.h>
+#include <orbisKeyboard.h>
 #include <orbisAudio.h>
 #include <modplayer.h>
 #include <ps4link.h>
@@ -31,6 +32,7 @@ typedef struct OrbisGlobalConf
 	Orbis2dConfig *conf;
 	OrbisPadConfig *confPad;
 	OrbisAudioConfig *confAudio;
+	OrbisKeyboardConfig *confKeyboard;
 	ps4LinkConfiguration *confLink;
 	int orbisLinkFlag;
 }OrbisGlobalConf;
