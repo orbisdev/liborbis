@@ -55,7 +55,7 @@
  make
  make install
  cd ..
- cd libOrbisKeyboard
+ cd liborbisKeyboard
  make
  make install
  cd ..
