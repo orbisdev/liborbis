@@ -180,6 +180,95 @@ void orbis2dDrawPixelColor(int x, int y, uint32_t pixelColor)
 	((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel]=color;
 
 }
+
+void orbis2dDrawLineColor(uint32_t x, uint32_t y, uint32_t x2, uint32_t y2, uint32_t pixelColor)
+{
+	int32_t i = 0, dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+	int32_t w = x2 - x;
+	int32_t h = y2 - y;
+	if(w < 0) dx1 = -1; else if(w > 0) dx1 = 1;
+	if(h < 0) dy1 = -1; else if(h > 0) dy1 = 1;
+	if(w < 0) dx2 = -1; else if(w > 0) dx2 = 1;
+	int32_t l = abs(w);
+	int32_t s = abs(h);
+	if(!(l > s))
+	{
+		l = abs(h);
+		s = abs(w);
+	if(h < 0) dy2 = -1; else if(h > 0) dy2 = 1;
+		dx2 = 0;
+	}
+	int32_t num = l >> 1;
+	for(i = 0; i <= l; i++)
+	{
+		orbis2dDrawPixelColor(x, y, pixelColor);
+		num+=s;
+		if(!(num < l))
+		{
+			num-=l;
+			x+=dx1;
+			y+=dy1;
+		}
+		else
+		{
+			x+=dx2;
+			y+=dy2;
+		}
+	}
+}
+
+/* circle helper function */
+static void circle_points(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t pixelColor)
+{
+	orbis2dDrawPixelColor(x_c + x, y_c + y, pixelColor);
+	orbis2dDrawPixelColor(x_c - x, y_c + y, pixelColor);
+	orbis2dDrawPixelColor(x_c + x, y_c - y, pixelColor);
+	orbis2dDrawPixelColor(x_c - x, y_c - y, pixelColor);
+	orbis2dDrawPixelColor(x_c + y, y_c + x, pixelColor);
+	orbis2dDrawPixelColor(x_c - y, y_c + x, pixelColor);
+	orbis2dDrawPixelColor(x_c + y, y_c - x, pixelColor);
+	orbis2dDrawPixelColor(x_c - y, y_c - x, pixelColor);
+}
+
+/* circle helper function */
+static void circle_lines(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t pixelColor)
+{
+	orbis2dDrawLineColor(x_c - x, y_c + y, x_c + x, y_c + y, pixelColor);
+	orbis2dDrawLineColor(x_c - x, y_c - y, x_c + x, y_c - y, pixelColor);
+	orbis2dDrawLineColor(x_c - y, y_c + x, x_c + y, y_c + x, pixelColor);
+	orbis2dDrawLineColor(x_c - y, y_c - x, x_c + y, y_c - x, pixelColor);
+}
+
+void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char filled, uint32_t pixelColor)
+{
+	int32_t x = 0;
+	int32_t y = r;
+	int32_t p = 1 - r;
+
+	if(filled)
+		circle_lines(x_c, y_c, x, y, pixelColor);
+	else
+		circle_points(x_c, y_c, x, y, pixelColor);
+
+	while(x < y)
+	{
+		x++;
+		if(p < 0)
+		{
+			p += 2 * x + 1;
+		}
+		else
+		{
+			y--;
+			p += 2 * (x - y) + 1;
+		}
+		if(filled)
+			circle_lines(x_c, y_c, x, y, pixelColor);
+		else
+			circle_points(x_c, y_c, x, y, pixelColor);
+	}
+}
+
 void orbis2dPutImage(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
