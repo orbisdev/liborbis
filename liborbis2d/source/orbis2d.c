@@ -218,25 +218,25 @@ void orbis2dDrawLineColor(uint32_t x, uint32_t y, uint32_t x2, uint32_t y2, uint
 }
 
 /* circle helper function */
-static void circle_points(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t pixelColor)
+static void circle_points(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t *pixelColor)
 {
-	orbis2dDrawPixelColor(x_c + x, y_c + y, pixelColor);
-	orbis2dDrawPixelColor(x_c - x, y_c + y, pixelColor);
-	orbis2dDrawPixelColor(x_c + x, y_c - y, pixelColor);
-	orbis2dDrawPixelColor(x_c - x, y_c - y, pixelColor);
-	orbis2dDrawPixelColor(x_c + y, y_c + x, pixelColor);
-	orbis2dDrawPixelColor(x_c - y, y_c + x, pixelColor);
-	orbis2dDrawPixelColor(x_c + y, y_c - x, pixelColor);
-	orbis2dDrawPixelColor(x_c - y, y_c - x, pixelColor);
+	orbis2dDrawPixelColor(x_c + x, y_c + y, *pixelColor);
+	orbis2dDrawPixelColor(x_c - x, y_c + y, *pixelColor);
+	orbis2dDrawPixelColor(x_c + x, y_c - y, *pixelColor);
+	orbis2dDrawPixelColor(x_c - x, y_c - y, *pixelColor);
+	orbis2dDrawPixelColor(x_c + y, y_c + x, *pixelColor);
+	orbis2dDrawPixelColor(x_c - y, y_c + x, *pixelColor);
+	orbis2dDrawPixelColor(x_c + y, y_c - x, *pixelColor);
+	orbis2dDrawPixelColor(x_c - y, y_c - x, *pixelColor);
 }
 
 /* circle helper function */
-static void circle_lines(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t pixelColor)
+static void circle_lines(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t *pixelColor)
 {
-	orbis2dDrawLineColor(x_c - x, y_c + y, x_c + x, y_c + y, pixelColor);
-	orbis2dDrawLineColor(x_c - x, y_c - y, x_c + x, y_c - y, pixelColor);
-	orbis2dDrawLineColor(x_c - y, y_c + x, x_c + y, y_c + x, pixelColor);
-	orbis2dDrawLineColor(x_c - y, y_c - x, x_c + y, y_c - x, pixelColor);
+	orbis2dDrawLineColor(x_c - x, y_c + y, x_c + x, y_c + y, *pixelColor);
+	orbis2dDrawLineColor(x_c - x, y_c - y, x_c + x, y_c - y, *pixelColor);
+	orbis2dDrawLineColor(x_c - y, y_c + x, x_c + y, y_c + x, *pixelColor);
+	orbis2dDrawLineColor(x_c - y, y_c - x, x_c + y, y_c - x, *pixelColor);
 }
 
 void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char filled, uint32_t pixelColor)
@@ -246,9 +246,9 @@ void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char f
 	int32_t p = 1 - r;
 
 	if(filled)
-		circle_lines(x_c, y_c, x, y, pixelColor);
+		circle_lines(x_c, y_c, x, y, &pixelColor);
 	else
-		circle_points(x_c, y_c, x, y, pixelColor);
+		circle_points(x_c, y_c, x, y, &pixelColor);
 
 	while(x < y)
 	{
@@ -263,9 +263,9 @@ void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char f
 			p += 2 * (x - y) + 1;
 		}
 		if(filled)
-			circle_lines(x_c, y_c, x, y, pixelColor);
+			circle_lines(x_c, y_c, x, y, &pixelColor);
 		else
-			circle_points(x_c, y_c, x, y, pixelColor);
+			circle_points(x_c, y_c, x, y, &pixelColor);
 	}
 }
 
