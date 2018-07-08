@@ -297,7 +297,8 @@ void orbis2dPutImage2(uint32_t *buf,int x, int y, int w, int h)
 			B=(buf[y0*w+x0]&0xFF0000)>>16;
 			G=(buf[y0*w+x0]&0x00FF00)>>8;
 			R=(buf[y0*w+x0]&0x0000FF);
-			orbis2dDrawPixelColor(x0+x,y0+y,A<<24|R<<16|G<<8|B);
+			if(A != 0)
+				orbis2dDrawPixelColor(x0+x,y0+y,A<<24|R<<16|G<<8|B);
 		}
 	}
 }
