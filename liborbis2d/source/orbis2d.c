@@ -289,15 +289,15 @@ void orbis2dPutImage2(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
 	unsigned int R,G,B,A;
-	for(y0=0;y0<h-y;y0++) 
+	for(y0=0;y0<h;y0++) 
 	{
-		for(x0=0;x0<w-x;x0++) 
+		for(x0=0;x0<w;x0++) 
 		{
 			A=(buf[y0*w+x0]&0xFF000000)>>24;
 			B=(buf[y0*w+x0]&0xFF0000)>>16;
 			G=(buf[y0*w+x0]&0x00FF00)>>8;
 			R=(buf[y0*w+x0]&0x0000FF);
-			orbis2dDrawPixelColor(x0,y0,A<<24|R<<16|G<<8|B);
+			orbis2dDrawPixelColor(x0+x,y0+y,A<<24|R<<16|G<<8|B);
 		}
 	}
 }

@@ -47,7 +47,7 @@ uint32_t orbis2dTextureGetStride(Orbis2dTexture *texture)
 {
 	return texture->width;
 }
-void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y)
+void orbis2dDrawTexture(Orbis2dTexture *texture, unsigned int x, unsigned int y)
 {
 	uint32_t *buf=NULL;
 	if(texture!=NULL)
@@ -55,7 +55,7 @@ void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y)
 		buf=orbis2dTextureGetDataPointer(texture);
 		if(buf!=NULL)
 		{
-			orbis2dPutImage2(buf,0,0,texture->width,texture->height);
+			orbis2dPutImage2(buf,x,y,texture->width,texture->height);
 		}
 	}
 }
