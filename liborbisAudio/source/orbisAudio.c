@@ -10,6 +10,7 @@
 #include <kernel.h>
 #include <audioout.h>
 #include <debugnet.h>
+#include <unistd.h>
 #include "orbisAudio.h"
 
 
