@@ -2,6 +2,7 @@
 #include <kernel.h>
 #include <sys/mman.h>
 #include <debugnet.h>
+#include <unistd.h>
 
 #define	CTL_KERN	1	/* "high kernel": proc, limits */
 #define	KERN_PROC	14	/* struct: process entries */
