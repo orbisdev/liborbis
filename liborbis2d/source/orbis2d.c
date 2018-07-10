@@ -195,7 +195,18 @@ void orbis2dDrawPixelColor(int x, int y, uint32_t pixelColor)
 
 		((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel]=pixelColor;
 	}
+}
 
+void orbis2dDrawPixelColor_WAlpha(int x, int y, uint32_t pixelColor)
+{
+	if((x > -1 && x < ATTR_WIDTH)
+	&& (y > -1 && y < ATTR_HEIGHT))
+	{
+		int pixel = (y * orbconf->width) + x;
+
+		uint32_t * const px = &((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel];
+		*px = mix_color(px, &pixelColor);
+	}
 }
 
 void orbis2dDrawLineColor(uint32_t x, uint32_t y, uint32_t x2, uint32_t y2, uint32_t pixelColor)
@@ -303,6 +314,7 @@ void orbis2dPutImage(uint32_t *buf,int x, int y, int w, int h)
 	}
 }
 
+// uses alpha channel via mix_color()
 void orbis2dPutImage2(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
@@ -315,7 +327,7 @@ void orbis2dPutImage2(uint32_t *buf,int x, int y, int w, int h)
 			B=(buf[y0*w+x0]&0xFF0000)>>16;
 			G=(buf[y0*w+x0]&0x00FF00)>>8;
 			R=(buf[y0*w+x0]&0x0000FF);
-			orbis2dDrawPixelColor(x+x0,y+y0,A<<24|R<<16|G<<8|B);
+			orbis2dDrawPixelColor_WAlpha(x+x0,y+y0,A<<24|R<<16|G<<8|B);
 		}
 	}
 }
