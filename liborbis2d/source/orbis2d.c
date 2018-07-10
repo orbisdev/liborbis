@@ -163,6 +163,29 @@ void orbis2dStartDrawing()
 
 }
 
+/* alpha-blending, a simple vectorized version */
+typedef unsigned int v4ui __attribute__((ext_vector_type(4)));
+static inline uint32_t mix_color(const uint32_t * const bg, const uint32_t * const fg)
+{
+	uint32_t a = *fg >>24;
+
+	if(a == 0)         return *bg;
+	else if(a == 0xFF) return *fg;
+
+	v4ui vin = (v4ui) {*fg, *fg, *bg, *bg}; // vload
+	v4ui vt  = (v4ui) {0x00FF00FF, 0x0000FF00, 0x00FF00FF, 0x0000FF00}; // vload
+
+	vin &= vt;
+	vt   = (v4ui) { a, a, 255 -a, 255 -a }; // vload, reuse t
+	vin *= vt;
+
+	vt  = (v4ui) {vin.x + vin.z, vin.y + vin.w, 0xFF00FF00, 0x00FF0000};
+	vin = (v4ui) {vt.x & vt.z, vt.y & vt.w};
+
+	uint32_t Fg = a + ((*bg >>24) * (255 - a) / 255);
+	return (Fg <<24) | ((vin.x | vin.y) >>8);
+}
+
 void orbis2dDrawPixelColor(int x, int y, uint32_t pixelColor)
 {
 	int pixel = (y * orbconf->width) + x;
