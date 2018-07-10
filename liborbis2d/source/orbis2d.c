@@ -188,9 +188,13 @@ static inline uint32_t mix_color(const uint32_t * const bg, const uint32_t * con
 
 void orbis2dDrawPixelColor(int x, int y, uint32_t pixelColor)
 {
-	int pixel = (y * orbconf->width) + x;
+	if((x > -1 && x < ATTR_WIDTH)
+	&& (y > -1 && y < ATTR_HEIGHT))
+	{
+		int pixel = (y * orbconf->width) + x;
 
-	((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel]=pixelColor;
+		((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel]=pixelColor;
+	}
 
 }
 
