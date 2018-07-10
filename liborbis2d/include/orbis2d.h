@@ -26,36 +26,41 @@
 
 typedef struct Orbis2dConfig
 {
+	void  *surfaceAddr[ORBIS2D_DISPLAY_BUFFER_NUM];
+	int64_t flipArgLog[ORBIS2D_DISPLAY_BUFFER_NUM];
+
+	SceKernelEqueue flipQueue;
+	int videoHandle;
+	uint8_t currentBuffer;
+	char orbis2d_initialized;
+	short width;
+
 	uint32_t bgColor;
-	uint64_t videoMemStackAddr;
 	uint32_t videoMemStackSize;
+	short pitch;
+	short height;
+	char flipRate;
+	char flipMode;
+	char bytesPerPixel;
+	char tilingMode;
+
+	uint64_t videoMemStackAddr;
 	uint64_t videoMemStackTopAddr;
 	uint64_t videoMemStackBaseAddr;
 	off_t videoMemOffset;
-	int width;
-	int pitch; 
-	int height;
-	int pixelFormat;
-	int bytesPerPixel;
-	int tilingMode;
-	void *surfaceAddr[ORBIS2D_DISPLAY_BUFFER_NUM];
-	int64_t flipArgLog[ORBIS2D_DISPLAY_BUFFER_NUM];
-	int flipMode;
-	int flipRate;
-	SceKernelEqueue flipQueue;
-	int videoHandle;
-	int currentBuffer;
-	int orbis2d_initialized;
-	
-}Orbis2dConfig;
+	uint32_t pixelFormat;
+	//char unused[8];
+
+}Orbis2dConfig __attribute__ ((aligned (16)));
+
 
 typedef struct Orbis2dTexture
 {
 	uint32_t *datap;
-	unsigned int width;
-	unsigned int height;
-	unsigned int depth;
-}Orbis2dTexture;
+	unsigned short width;
+	unsigned short height;
+	unsigned short depth;
+}Orbis2dTexture __attribute__ ((aligned (16)));
 
 int orbis2dInit();
 void orbis2dFinish();
