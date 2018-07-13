@@ -269,7 +269,7 @@ void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char f
 	}
 }
 
-void orbis2dPutImage(uint32_t *buf, int x, int y, int w, int h)
+void orbis2dPutImage(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
 	unsigned int R,G,B;
@@ -285,27 +285,24 @@ void orbis2dPutImage(uint32_t *buf, int x, int y, int w, int h)
 		}
 	}
 }
-
-void orbis2dPutImage2(uint32_t *buf, int x, int y, int tx, int ty, int tw, int th, int width)
+void orbis2dPutImage2(uint32_t *buf,int x, int y, int w, int h)
 {
-	int tx0, ty0;
-	
+	int x0, y0;
 	unsigned int R,G,B,A;
-	for(ty0=ty;ty0<th+ty;ty0++) 
+	for(y0=0;y0<h;y0++) 
 	{
-		for(tx0=tx;tx0<tw+tx;tx0++) 
+		for(x0=0;x0<w;x0++) 
 		{
-			A=(buf[ty0*width+tx0]&0xFF000000)>>24;
-			B=(buf[ty0*width+tx0]&0xFF0000)>>16;
-			G=(buf[ty0*width+tx0]&0x00FF00)>>8;
-			R=(buf[ty0*width+tx0]&0x0000FF);
+			A=(buf[y0*w+x0]&0xFF000000)>>24;
+			B=(buf[y0*w+x0]&0xFF0000)>>16;
+			G=(buf[y0*w+x0]&0x00FF00)>>8;
+			R=(buf[y0*w+x0]&0x0000FF);
 			if(A != 0)
-				orbis2dDrawPixelColor(tx0+x,ty0+y,A<<24|R<<16|G<<8|B);
+				orbis2dDrawPixelColor(x0+x,y0+y,A<<24|R<<16|G<<8|B);
 		}
 	}
 }
-
-void orbis2dPutImage3(uint32_t *buf, int x, int y, int w, int h)
+void orbis2dPutImage3(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
 	unsigned int R,G,B,A;
@@ -321,8 +318,7 @@ void orbis2dPutImage3(uint32_t *buf, int x, int y, int w, int h)
 		}
 	}
 }
-
-void orbis2dPutImage4(uint32_t *buf, int x, int y, int w, int h)
+void orbis2dPutImage4(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
 	unsigned int R,G,B,A;
@@ -338,8 +334,7 @@ void orbis2dPutImage4(uint32_t *buf, int x, int y, int w, int h)
 		}
 	}
 }
-
-void orbis2dPutImage5(uint32_t *buf, int x, int y, int w, int h)
+void orbis2dPutImage5(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
 	unsigned int R,G,B,A;
@@ -355,7 +350,6 @@ void orbis2dPutImage5(uint32_t *buf, int x, int y, int w, int h)
 		}
 	}
 }
-
 void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color)
 {
 	int x0, y0;
@@ -371,14 +365,12 @@ void orbis2dClearBuffer()
 {
 	orbis2dDrawRectColor(0, orbconf->width, 0, orbconf->height, orbconf->bgColor);
 }
-
 void orbis2dSwapBuffers()
 {
 	orbconf->currentBuffer=(orbconf->currentBuffer+1)%ORBIS2D_DISPLAY_BUFFER_NUM;
 	//debugNetPrintf(DEBUG,"liborbis2d currentBuffer  %d\n",orbconf->currentBuffer);
 	
 }
-
 void *orbis2dMalloc(int size)
 {
 	uint64_t offset=orbconf->videoMemStackAddr;
@@ -393,7 +385,6 @@ void *orbis2dMalloc(int size)
 	
 	return (void *)(offset);
 }
-
 void orbis2dAllocDisplayBuffer(int displayBufNum)
 {
 	int i;
@@ -407,7 +398,6 @@ void orbis2dAllocDisplayBuffer(int displayBufNum)
 	}
 	debugNetPrintf(DEBUG,"liborbis2d orbis2dAllocDisplayBuffer done\n");
 }
-
 int orbis2dInitDisplayBuffer(int num, int bufIndexStart)
 {
 	SceVideoOutBufferAttribute attr;
@@ -422,7 +412,6 @@ int orbis2dInitDisplayBuffer(int num, int bufIndexStart)
 
 	return ret;
 }
-
 int orbis2dInitMemory()
 {
 	int ret;
@@ -449,7 +438,6 @@ int orbis2dInitMemory()
 	return ret;
 
 }
-
 int orbis2dInitVideoHandle()
 {
 	int handle;
@@ -498,7 +486,6 @@ int orbis2dInitVideoHandle()
 	}		
 	return handle;
 }
-
 int orbis2dInit()
 {
 	int ret;
@@ -556,3 +543,4 @@ int orbis2dInit()
 	}
 	return orbconf->orbis2d_initialized;
 }
+
