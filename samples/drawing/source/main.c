@@ -10,10 +10,12 @@
 #include <modplayer.h>
 #include <ps4link.h>
 #include <debugnet.h>
+#include <orbisXbmFont.h>
 
 
-int x=1280/2;
-int y=720/2;
+
+int x=ATTR_WIDTH /2;
+int y=ATTR_HEIGHT/2;
 int w=1280/64;
 int h=1280/64;
 int step=10;
@@ -236,6 +238,11 @@ void initApp()
 	}
 	
 }
+
+
+uint c1, c2;
+char tmp_ln[256];
+
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -259,6 +266,13 @@ int main(int argc, char *argv[])
 	
 	
 	
+	c1 = 0xFFFF22AA;
+	c2 = 0xFF221133;
+	update_gradient(&c1, &c2);
+
+	sprintf(tmp_ln, "hella ZeraTron!");
+	int tx = get_aligned_x(tmp_ln, CENTER);
+
 	
 	while(flag)
 	{
@@ -279,16 +293,22 @@ int main(int argc, char *argv[])
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
 				
+		// text
+		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
+
 		//flush and flip
 		orbis2dFinishDrawing(flipArg);
 				
 		//swap buffers
 		orbis2dSwapBuffers();
 		flipArg++;
+		
+		sceKernelUsleep(1000);
 	}
 	
 	orbisAudioResume(0);
 	Mod_End();
+	
 	//wait for current display buffer
 	orbis2dStartDrawing();
 
