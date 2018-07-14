@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>		 // memset(), memcpy()
 #include <sys/param.h>
 #include <kernel.h>
 #include <types/event.h>
@@ -400,14 +401,23 @@ void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color)
 }
 void orbis2dClearBuffer()
 {
-	orbis2dDrawRectColor(0, orbconf->width, 0, orbconf->height, orbconf->bgColor);
+	//orbis2dDrawRectColor(0, orbconf->width, 0, orbconf->height, orbconf->bgColor);
+	uint64_t *px = orbconf->surfaceAddr[orbconf->currentBuffer],
+	           c = (unsigned long long) orbconf->bgColor << 32 | orbconf->bgColor;
+
+	for(int i=0; i<(bufSize/sizeof(uint64_t)); i++)
+	{
+		memcpy(px, &c, sizeof(uint64_t)); px++;
+	}
 }
+
 void orbis2dSwapBuffers()
 {
 	orbconf->currentBuffer=(orbconf->currentBuffer+1)%ORBIS2D_DISPLAY_BUFFER_NUM;
 	//debugNetPrintf(DEBUG,"liborbis2d currentBuffer  %d\n",orbconf->currentBuffer);
 	
 }
+
 void *orbis2dMalloc(int size)
 {
 	uint64_t offset=orbconf->videoMemStackAddr;
