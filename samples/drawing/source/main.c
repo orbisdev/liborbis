@@ -172,8 +172,12 @@ void updateController()
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1))
 		{
-			debugNetPrintf(DEBUG,"L1 pressed\n");
-			
+			R=rand()%256;
+			G=rand()%256;
+			B=rand()%256;
+			conf->bgColor=0xFF000000|R<<16|G<<8|B;
+			debugNetPrintf(DEBUG,"L1 pressed, new random() bgColor: %8x\n", conf->bgColor);
+			refresh = 1;
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L2))
 		{
