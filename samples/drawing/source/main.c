@@ -309,20 +309,22 @@ int main(int argc, char *argv[])
 		{
 			orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
 
-		// first, an image
-		if(png) orbis2dDrawTexture(png, 700, 300); // uses alpha
-	
-		// draw a line
-		orbis2dDrawLineColor(140, 20, 100, 290, 0xff2200ff);
-	
-		orbis2dDrawCircleColor(1000, 250, 128, 1, 0x402200ff);
-	
-		orbis2dDrawCircleColor(1100, 260, 100, 1, 0x800000ff);
-	
-		orbis2dDrawCircleColor(1020, 230, 82, 0, 0xFF6600ff);
+			// first, an image
+			if(png) orbis2dDrawTexture(png, 700, 300); // uses alpha
 
-		orbis2dDrawRectColor(300, 280, 100, 180, color);
+			// draw a line
+			orbis2dDrawLineColor(140, 20, 100, 290, 0xff2200ff);
 
+			orbis2dDrawCircleColor(1000, 250, 128, 1, 0x402200ff);
+
+			orbis2dDrawCircleColor(1100, 260, 100, 1, 0x800000ff);
+
+			orbis2dDrawCircleColor(1020, 230, 82, 0, 0xFF6600ff);
+
+			orbis2dDrawRectColor(300, 280, 100, 180, color);
+
+			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
+			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
 		}
 				
 		//default red is here press X to random color
