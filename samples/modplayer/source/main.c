@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 		orbis2dStartDrawing();
 
 		// clear with background (default white) to the current display buffer 
-		orbis2dClearBuffer();
+		orbis2dClearBuffer(1);
 				
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
 	orbis2dStartDrawing();
 
 	// clear with background (default white) to the current display buffer 
-	orbis2dClearBuffer();
+	orbis2dClearBuffer(1);
 					
 	//flush and flip
 	orbis2dFinishDrawing(flipArg);

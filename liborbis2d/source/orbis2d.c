@@ -24,6 +24,8 @@ int64_t flipArgCounter=0;
 
 // we cache the framebuffer size on init, then reuse value
 static int bufSize;
+// we cache the entire framebuffer to clean with this copy
+static uint32_t *dumpBuf = NULL;
 
 void orbis2dFinish()
 {
@@ -39,6 +41,7 @@ void orbis2dFinish()
 		orbconf->orbis2d_initialized=-1;
 		debugNetPrintf(DEBUG,"liborbis2d finished\n");
 	}
+	if(dumpBuf) free(dumpBuf), dumpBuf = NULL;
 }
 
 Orbis2dConfig *orbis2dGetConf()
@@ -399,15 +402,32 @@ void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color)
 		}
 	}
 }
-void orbis2dClearBuffer()
-{
-	//orbis2dDrawRectColor(0, orbconf->width, 0, orbconf->height, orbconf->bgColor);
-	uint64_t *px = orbconf->surfaceAddr[orbconf->currentBuffer],
-	           c = (unsigned long long) orbconf->bgColor << 32 | orbconf->bgColor;
 
-	for(int i=0; i<(bufSize/sizeof(uint64_t)); i++)
+void orbis2dDumpBuffer()
+{
+	if(!dumpBuf)
+		dumpBuf = malloc(bufSize);
+
+	memcpy(dumpBuf, orbconf->surfaceAddr[orbconf->currentBuffer], bufSize);  // backup screen
+}
+
+void orbis2dClearBuffer(char flag)
+{
+	if(!flag
+	&& dumpBuf)
 	{
-		memcpy(px, &c, sizeof(uint64_t)); px++;
+		memcpy(orbconf->surfaceAddr[orbconf->currentBuffer], dumpBuf, bufSize);
+	}
+	else
+	{
+		//orbis2dDrawRectColor(0, orbconf->width, 0, orbconf->height, orbconf->bgColor);
+		uint64_t *px = orbconf->surfaceAddr[orbconf->currentBuffer],
+		           c = (unsigned long long) orbconf->bgColor << 32 | orbconf->bgColor;
+
+		for(int i=0; i<(bufSize/sizeof(uint64_t)); i++)
+		{
+			memcpy(px, &c, sizeof(uint64_t)); px++;
+		}
 	}
 }
 
@@ -415,7 +435,6 @@ void orbis2dSwapBuffers()
 {
 	orbconf->currentBuffer=(orbconf->currentBuffer+1)%ORBIS2D_DISPLAY_BUFFER_NUM;
 	//debugNetPrintf(DEBUG,"liborbis2d currentBuffer  %d\n",orbconf->currentBuffer);
-	
 }
 
 void *orbis2dMalloc(int size)
@@ -574,7 +593,7 @@ int orbis2dInit()
 			// prepare initial clear color to the display buffers
 			for (bufIndex=0;bufIndex<ORBIS2D_DISPLAY_BUFFER_NUM;bufIndex++) 
 			{
-				orbis2dClearBuffer();
+				orbis2dClearBuffer(1);
 				orbis2dSwapBuffers();
 			}
 			
