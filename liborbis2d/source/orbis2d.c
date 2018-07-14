@@ -21,6 +21,9 @@ Orbis2dConfig *orbconf=NULL;
 int orbis2d_external_conf=-1;
 int64_t flipArgCounter=0; 
 
+// we cache the framebuffer size on init, then reuse value
+static int bufSize;
+
 void orbis2dFinish()
 {
 	int ret;
@@ -100,6 +103,11 @@ int orbis2dInitWithConf(Orbis2dConfig *conf)
 		debugNetPrintf(DEBUG,"liborbis2d already initialized using configuration external\n");
 		debugNetPrintf(DEBUG,"orbis2d_initialized=%d\n",orbconf->orbis2d_initialized);
 		debugNetPrintf(DEBUG,"ready to have a lot of fun...\n");
+
+		// cache the framebuffer size once, then reuse value
+		bufSize = orbconf->pitch*orbconf->height*orbconf->bytesPerPixel;
+		debugNetPrintf(DEBUG,"caching framebuffersize: %db\n", bufSize);
+
 		return orbconf->orbis2d_initialized;
 	}
 	else
@@ -416,14 +424,13 @@ void *orbis2dMalloc(int size)
 }
 void orbis2dAllocDisplayBuffer(int displayBufNum)
 {
-	int i;
+	// cache the framebuffer size once, then reuse value
+	bufSize = orbconf->pitch*orbconf->height*orbconf->bytesPerPixel;
 
-	int bufSize=orbconf->pitch*orbconf->height*orbconf->bytesPerPixel;
-	for (i=0;i<displayBufNum;i++) 
+	for(int i=0;i<displayBufNum;i++)
 	{
 		orbconf->surfaceAddr[i]= orbis2dMalloc(bufSize);
 		debugNetPrintf(DEBUG,"liborbis2d orbis2dMalloc buffer %d, new pointer %p \n",i,	orbconf->surfaceAddr[i]);
-		
 	}
 	debugNetPrintf(DEBUG,"liborbis2d orbis2dAllocDisplayBuffer done\n");
 }
