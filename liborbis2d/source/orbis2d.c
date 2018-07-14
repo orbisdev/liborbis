@@ -113,15 +113,13 @@ int orbis2dWaitFlipArg(SceKernelEqueue *flipQueue)
 	int ret;
 	int event_out;
 	SceKernelEvent event;
-	
+	SceVideoOutFlipStatus status;
 	
 	while(1)
 	{
-		SceVideoOutFlipStatus status;
 		ret=sceVideoOutGetFlipStatus(orbconf->videoHandle, &status);
 		if(ret>=0)
 		{
-			
 			if(status.flipArg>=(orbconf->flipArgLog[orbconf->currentBuffer] +1))
 			{
 				return 0;
@@ -131,7 +129,6 @@ int orbis2dWaitFlipArg(SceKernelEqueue *flipQueue)
 			if(ret>=0)
 			{
 				//debugNetPrintf(DEBUG,"liborbis2d sceKernelWaitEqueue return %d\n",ret);
-				
 			}
 			else
 			{
@@ -141,14 +138,11 @@ int orbis2dWaitFlipArg(SceKernelEqueue *flipQueue)
 		else
 		{
 			debugNetPrintf(DEBUG,"liborbis2d sceVideoOutGetFlipStatus return error 0x%8x\n",ret);
-				
 		}
 
 	}
 
-
 	return 0;
-
 }
 void orbis2dFinishDrawing(int64_t flipArg)
 {
@@ -169,16 +163,50 @@ void orbis2dStartDrawing()
 
 }
 
+/* alpha-blending, a simple vectorized version */
+typedef unsigned int v4ui __attribute__((ext_vector_type(4)));
+static inline uint32_t mix_color(const uint32_t * const bg, const uint32_t * const fg)
+{
+	uint32_t a = *fg >>24;
+
+	if(a == 0)         return *bg;
+	else if(a == 0xFF) return *fg;
+
+	v4ui vin = (v4ui) {*fg, *fg, *bg, *bg}; // vload
+	v4ui vt  = (v4ui) {0x00FF00FF, 0x0000FF00, 0x00FF00FF, 0x0000FF00}; // vload
+
+	vin &= vt;
+	vt   = (v4ui) { a, a, 255 -a, 255 -a }; // vload, reuse t
+	vin *= vt;
+
+	vt  = (v4ui) {vin.x + vin.z, vin.y + vin.w, 0xFF00FF00, 0x00FF0000};
+	vin = (v4ui) {vt.x & vt.z, vt.y & vt.w};
+
+	uint32_t Fg = a + ((*bg >>24) * (255 - a) / 255);
+	return (Fg <<24) | ((vin.x | vin.y) >>8);
+}
+
 void orbis2dDrawPixelColor(int x, int y, uint32_t pixelColor)
 {
-	int color;
-	int pixel = (y * orbconf->pitch) + x;
+	if((x > -1 && x < ATTR_WIDTH)
+	&& (y > -1 && y < ATTR_HEIGHT))
+	{
+		int pixel = (y * orbconf->width) + x;
 
-	color=pixelColor;
+		((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel]=pixelColor;
+	}
+}
 
-	
-	((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel]=color;
+void orbis2dDrawPixelColor_WAlpha(int x, int y, uint32_t pixelColor)
+{
+	if((x > -1 && x < ATTR_WIDTH)
+	&& (y > -1 && y < ATTR_HEIGHT))
+	{
+		int pixel = (y * orbconf->width) + x;
 
+		uint32_t * const px = &((uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer])[pixel];
+		*px = mix_color(px, &pixelColor);
+	}
 }
 
 void orbis2dDrawLineColor(uint32_t x, uint32_t y, uint32_t x2, uint32_t y2, uint32_t pixelColor)
@@ -218,25 +246,25 @@ void orbis2dDrawLineColor(uint32_t x, uint32_t y, uint32_t x2, uint32_t y2, uint
 }
 
 /* circle helper function */
-static void circle_points(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t pixelColor)
+static void circle_points(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t *pixelColor)
 {
-	orbis2dDrawPixelColor(x_c + x, y_c + y, pixelColor);
-	orbis2dDrawPixelColor(x_c - x, y_c + y, pixelColor);
-	orbis2dDrawPixelColor(x_c + x, y_c - y, pixelColor);
-	orbis2dDrawPixelColor(x_c - x, y_c - y, pixelColor);
-	orbis2dDrawPixelColor(x_c + y, y_c + x, pixelColor);
-	orbis2dDrawPixelColor(x_c - y, y_c + x, pixelColor);
-	orbis2dDrawPixelColor(x_c + y, y_c - x, pixelColor);
-	orbis2dDrawPixelColor(x_c - y, y_c - x, pixelColor);
+	orbis2dDrawPixelColor(x_c + x, y_c + y, *pixelColor);
+	orbis2dDrawPixelColor(x_c - x, y_c + y, *pixelColor);
+	orbis2dDrawPixelColor(x_c + x, y_c - y, *pixelColor);
+	orbis2dDrawPixelColor(x_c - x, y_c - y, *pixelColor);
+	orbis2dDrawPixelColor(x_c + y, y_c + x, *pixelColor);
+	orbis2dDrawPixelColor(x_c - y, y_c + x, *pixelColor);
+	orbis2dDrawPixelColor(x_c + y, y_c - x, *pixelColor);
+	orbis2dDrawPixelColor(x_c - y, y_c - x, *pixelColor);
 }
 
 /* circle helper function */
-static void circle_lines(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t pixelColor)
+static void circle_lines(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t *pixelColor)
 {
-	orbis2dDrawLineColor(x_c - x, y_c + y, x_c + x, y_c + y, pixelColor);
-	orbis2dDrawLineColor(x_c - x, y_c - y, x_c + x, y_c - y, pixelColor);
-	orbis2dDrawLineColor(x_c - y, y_c + x, x_c + y, y_c + x, pixelColor);
-	orbis2dDrawLineColor(x_c - y, y_c - x, x_c + y, y_c - x, pixelColor);
+	orbis2dDrawLineColor(x_c - x, y_c + y, x_c + x, y_c + y, *pixelColor);
+	orbis2dDrawLineColor(x_c - x, y_c - y, x_c + x, y_c - y, *pixelColor);
+	orbis2dDrawLineColor(x_c - y, y_c + x, x_c + y, y_c + x, *pixelColor);
+	orbis2dDrawLineColor(x_c - y, y_c - x, x_c + y, y_c - x, *pixelColor);
 }
 
 void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char filled, uint32_t pixelColor)
@@ -246,9 +274,9 @@ void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char f
 	int32_t p = 1 - r;
 
 	if(filled)
-		circle_lines(x_c, y_c, x, y, pixelColor);
+		circle_lines(x_c, y_c, x, y, &pixelColor);
 	else
-		circle_points(x_c, y_c, x, y, pixelColor);
+		circle_points(x_c, y_c, x, y, &pixelColor);
 
 	while(x < y)
 	{
@@ -263,9 +291,9 @@ void orbis2dDrawCircleColor(int32_t x_c, int32_t y_c, int32_t r, unsigned char f
 			p += 2 * (x - y) + 1;
 		}
 		if(filled)
-			circle_lines(x_c, y_c, x, y, pixelColor);
+			circle_lines(x_c, y_c, x, y, &pixelColor);
 		else
-			circle_points(x_c, y_c, x, y, pixelColor);
+			circle_points(x_c, y_c, x, y, &pixelColor);
 	}
 }
 
@@ -285,19 +313,21 @@ void orbis2dPutImage(uint32_t *buf,int x, int y, int w, int h)
 		}
 	}
 }
+
+// uses alpha channel via mix_color()
 void orbis2dPutImage2(uint32_t *buf,int x, int y, int w, int h)
 {
 	int x0, y0;
 	unsigned int R,G,B,A;
-	for(y0=0;y0<h-y;y0++) 
+	for(y0=0;y0<h;y0++)
 	{
-		for(x0=0;x0<w-x;x0++) 
+		for(x0=0;x0<w;x0++)
 		{
 			A=(buf[y0*w+x0]&0xFF000000)>>24;
 			B=(buf[y0*w+x0]&0xFF0000)>>16;
 			G=(buf[y0*w+x0]&0x00FF00)>>8;
 			R=(buf[y0*w+x0]&0x0000FF);
-			orbis2dDrawPixelColor(x0,y0,A<<24|R<<16|G<<8|B);
+			orbis2dDrawPixelColor_WAlpha(x+x0,y+y0,A<<24|R<<16|G<<8|B);
 		}
 	}
 }

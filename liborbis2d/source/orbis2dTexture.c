@@ -29,7 +29,6 @@ Orbis2dTexture * orbis2dCreateEmptyTexture(unsigned int w, unsigned int h)
 }
 void orbis2dDestroyTexture(Orbis2dTexture *texture)
 {
-	
 	if(texture!=NULL)
 	{
 		if(texture->datap!=NULL)
@@ -55,7 +54,7 @@ void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y)
 		buf=orbis2dTextureGetDataPointer(texture);
 		if(buf!=NULL)
 		{
-			orbis2dPutImage2(buf,0,0,texture->width,texture->height);
+			orbis2dPutImage2(buf,x,y,texture->width,texture->height);
 		}
 	}
 }
