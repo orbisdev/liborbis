@@ -30,7 +30,7 @@ Orbis2dConfig *conf;
 OrbisPadConfig *confPad;
 
 #define PNG_FILE_PATH  "host0:uni.png"
-Orbis2dTexture *png = NULL;
+Orbis2dTexture *png, *tentacle = NULL;
 
 
 static char refresh = 1;
@@ -187,7 +187,11 @@ void updateController()
 		if(orbisPadGetButtonPressed(ORBISPAD_R1))
 		{
 			debugNetPrintf(DEBUG,"R1 pressed\n");
-			
+			if(!tentacle)
+			    tentacle=orbis2dLoadPngFromHost_v2("host0:tentacle.png");
+			if(!tentacle)
+				debugNetPrintf(ERROR,"Problem loading Icon image file\n");
+			refresh = 1;
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_R2))
 		{
@@ -200,7 +204,8 @@ void updateController()
 }
 void finishApp()
 {
-	if(png) orbis2dDestroyTexture(png);
+	if(png)      orbis2dDestroyTexture(png);
+	if(tentacle) orbis2dDestroyTexture(tentacle);
 
 	orbisAudioFinish();
 	orbisPadFinish();
@@ -322,6 +327,8 @@ int main(int argc, char *argv[])
 			orbis2dDrawCircleColor(1020, 230, 82, 0, 0xFF6600ff);
 
 			orbis2dDrawRectColor(300, 280, 100, 180, color);
+
+			if(tentacle) orbis2dDrawTexture(tentacle, 200, 400); // uses alpha
 
 			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
 			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
