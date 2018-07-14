@@ -88,4 +88,5 @@ uint32_t *orbis2dTextureGetDataPointer(Orbis2dTexture *texture);
 uint32_t orbis2dTextureGetStride(Orbis2dTexture *texture);
 Orbis2dTexture *orbis2dLoadPngFromBuffer(const void *buffer);
 Orbis2dTexture *orbis2dLoadPngFromHost(const char *filename);
+Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *filename);
 void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y);
