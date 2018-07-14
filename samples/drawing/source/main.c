@@ -29,6 +29,12 @@ int flag=0;
 Orbis2dConfig *conf;
 OrbisPadConfig *confPad;
 
+#define PNG_FILE_PATH  "host0:uni.png"
+Orbis2dTexture *png = NULL;
+
+
+static char refresh = 1;
+
 typedef struct OrbisGlobalConf
 {
 	Orbis2dConfig *conf;
@@ -190,6 +196,8 @@ void updateController()
 }
 void finishApp()
 {
+	if(png) orbis2dDestroyTexture(png);
+
 	orbisAudioFinish();
 	orbisPadFinish();
 	
@@ -273,6 +281,9 @@ int main(int argc, char *argv[])
 	sprintf(tmp_ln, "hella ZeraTron!");
 	int tx = get_aligned_x(tmp_ln, CENTER);
 
+	png=orbis2dLoadPngFromHost_v2(PNG_FILE_PATH);
+	if(!png)
+		debugNetPrintf(ERROR,"Problem loading Icon image file from %s \n",PNG_FILE_PATH);
 	
 	while(flag)
 	{
@@ -287,8 +298,15 @@ int main(int argc, char *argv[])
 		//wait for current display buffer
 		orbis2dStartDrawing();
 
-		// clear with background (default white) to the current display buffer 
-		orbis2dClearBuffer(1);
+		// clear the current display buffer
+		orbis2dClearBuffer(0);  // uses cached dumpBuf
+
+		if(refresh)	// draw the background image
+		{
+			orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
+
+		// first, an image
+		if(png) orbis2dDrawTexture(png, 700, 300); // uses alpha
 	
 		// draw a line
 		orbis2dDrawLineColor(140, 20, 100, 290, 0xff2200ff);
@@ -298,6 +316,10 @@ int main(int argc, char *argv[])
 		orbis2dDrawCircleColor(1100, 260, 100, 1, 0x800000ff);
 	
 		orbis2dDrawCircleColor(1020, 230, 82, 0, 0xFF6600ff);
+
+		orbis2dDrawRectColor(300, 280, 100, 180, color);
+
+		}
 				
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
