@@ -289,6 +289,15 @@ int main(int argc, char *argv[])
 
 		// clear with background (default white) to the current display buffer 
 		orbis2dClearBuffer(1);
+	
+		// draw a line
+		orbis2dDrawLineColor(140, 20, 100, 290, 0xff2200ff);
+	
+		orbis2dDrawCircleColor(1000, 250, 128, 1, 0x402200ff);
+	
+		orbis2dDrawCircleColor(1100, 260, 100, 1, 0x800000ff);
+	
+		orbis2dDrawCircleColor(1020, 230, 82, 0, 0xFF6600ff);
 				
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
