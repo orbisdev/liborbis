@@ -241,7 +241,7 @@ void orbis2dDrawLineColor(uint32_t x, uint32_t y, uint32_t x2, uint32_t y2, uint
 	int32_t num = l >> 1;
 	for(i = 0; i <= l; i++)
 	{
-		orbis2dDrawPixelColor(x, y, pixelColor);
+		orbis2dDrawPixelColor_WAlpha(x, y, pixelColor);
 		num+=s;
 		if(!(num < l))
 		{
@@ -260,14 +260,14 @@ void orbis2dDrawLineColor(uint32_t x, uint32_t y, uint32_t x2, uint32_t y2, uint
 /* circle helper function */
 static void circle_points(int32_t x_c, int32_t y_c, int32_t x, int32_t y, uint32_t *pixelColor)
 {
-	orbis2dDrawPixelColor(x_c + x, y_c + y, *pixelColor);
-	orbis2dDrawPixelColor(x_c - x, y_c + y, *pixelColor);
-	orbis2dDrawPixelColor(x_c + x, y_c - y, *pixelColor);
-	orbis2dDrawPixelColor(x_c - x, y_c - y, *pixelColor);
-	orbis2dDrawPixelColor(x_c + y, y_c + x, *pixelColor);
-	orbis2dDrawPixelColor(x_c - y, y_c + x, *pixelColor);
-	orbis2dDrawPixelColor(x_c + y, y_c - x, *pixelColor);
-	orbis2dDrawPixelColor(x_c - y, y_c - x, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c + x, y_c + y, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c - x, y_c + y, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c + x, y_c - y, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c - x, y_c - y, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c + y, y_c + x, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c - y, y_c + x, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c + y, y_c - x, *pixelColor);
+	orbis2dDrawPixelColor_WAlpha(x_c - y, y_c - x, *pixelColor);
 }
 
 /* circle helper function */
@@ -398,7 +398,7 @@ void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color)
 	{
 		for(x0=x;x0<x+w;x0++) 
 		{
-			orbis2dDrawPixelColor(x0,y0,color);
+			orbis2dDrawPixelColor_WAlpha(x0,y0,color);
 		}
 	}
 }
