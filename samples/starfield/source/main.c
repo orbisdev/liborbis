@@ -12,6 +12,7 @@
 #include <debugnet.h>
 #include <orbisXbmFont.h>
 
+#include "starfield.h"
 
 int x=ATTR_WIDTH /2;
 int y=ATTR_HEIGHT/2;
@@ -264,6 +265,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	initApp();
+
+	init_starfield();
 	
 	Mod_Init(0);
 	Mod_Load("host0:zweifeld.mod");
@@ -300,14 +303,19 @@ int main(int argc, char *argv[])
 		{
 			orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
 
+			// draw a background
+
 			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
 			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
 		}
 
+		// draw stars
+		draw_starfield();
+
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
 				
-		// text
+		// draw text with Xbm_Font
 		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
 
 		//flush and flip
