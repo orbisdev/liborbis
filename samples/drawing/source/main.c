@@ -12,7 +12,7 @@
 #include <debugnet.h>
 #include <orbisXbmFont.h>
 
-
+#include "scroller.h"  // sinusscroller definitions
 
 int x=ATTR_WIDTH /2;
 int y=ATTR_HEIGHT/2;
@@ -281,6 +281,7 @@ int main(int argc, char *argv[])
 	Mod_Play();
     orbisAudioResume(0);
 	
+	init_sinetext();  // initial setup
 	
 	
 	c1 = 0xFFFF22AA;
@@ -333,20 +334,24 @@ int main(int argc, char *argv[])
 			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
 			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
 		}
-				
+
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
-				
+
 		// text
 		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
 
+		// testing sine in a scroller
+		draw_sinetext(150);
+		move_sinetext();
+
 		//flush and flip
 		orbis2dFinishDrawing(flipArg);
-				
+
 		//swap buffers
 		orbis2dSwapBuffers();
 		flipArg++;
-		
+
 		sceKernelUsleep(1000);
 	}
 	
