@@ -10,10 +10,12 @@
 #include <modplayer.h>
 #include <ps4link.h>
 #include <debugnet.h>
+#include <orbisXbmFont.h>
 
+#include "scroller.h"  // sinusscroller definitions
 
-int x=1280/2;
-int y=720/2;
+int x=ATTR_WIDTH /2;
+int y=ATTR_HEIGHT/2;
 int w=1280/64;
 int h=1280/64;
 int step=10;
@@ -26,6 +28,12 @@ int flag=0;
 
 Orbis2dConfig *conf;
 OrbisPadConfig *confPad;
+
+#define PNG_FILE_PATH  "host0:uni.png"
+Orbis2dTexture *png, *tentacle = NULL;
+
+
+static char refresh = 1;
 
 typedef struct OrbisGlobalConf
 {
@@ -164,8 +172,12 @@ void updateController()
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1))
 		{
-			debugNetPrintf(DEBUG,"L1 pressed\n");
-			
+			R=rand()%256;
+			G=rand()%256;
+			B=rand()%256;
+			conf->bgColor=0xFF000000|R<<16|G<<8|B;
+			debugNetPrintf(DEBUG,"L1 pressed, new random() bgColor: %8x\n", conf->bgColor);
+			refresh = 1;
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L2))
 		{
@@ -175,7 +187,11 @@ void updateController()
 		if(orbisPadGetButtonPressed(ORBISPAD_R1))
 		{
 			debugNetPrintf(DEBUG,"R1 pressed\n");
-			
+			if(!tentacle)
+			    tentacle=orbis2dLoadPngFromHost_v2("host0:tentacle.png");
+			if(!tentacle)
+				debugNetPrintf(ERROR,"Problem loading Icon image file\n");
+			refresh = 1;
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_R2))
 		{
@@ -188,6 +204,9 @@ void updateController()
 }
 void finishApp()
 {
+	if(png)      orbis2dDestroyTexture(png);
+	if(tentacle) orbis2dDestroyTexture(tentacle);
+
 	orbisAudioFinish();
 	orbisPadFinish();
 	
@@ -236,6 +255,11 @@ void initApp()
 	}
 	
 }
+
+
+uint c1, c2;
+char tmp_ln[256];
+
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -257,8 +281,19 @@ int main(int argc, char *argv[])
 	Mod_Play();
     orbisAudioResume(0);
 	
+	init_sinetext();  // initial setup
 	
 	
+	c1 = 0xFFFF22AA;
+	c2 = 0xFF221133;
+	update_gradient(&c1, &c2);
+
+	sprintf(tmp_ln, "hella ZeraTron!");
+	int tx = get_aligned_x(tmp_ln, CENTER);
+
+	png=orbis2dLoadPngFromHost_v2(PNG_FILE_PATH);
+	if(!png)
+		debugNetPrintf(ERROR,"Problem loading Icon image file from %s \n",PNG_FILE_PATH);
 	
 	while(flag)
 	{
@@ -273,22 +308,56 @@ int main(int argc, char *argv[])
 		//wait for current display buffer
 		orbis2dStartDrawing();
 
-		// clear with background (default white) to the current display buffer 
-		orbis2dClearBuffer(1);
-				
+		// clear the current display buffer
+		orbis2dClearBuffer(0);  // uses cached dumpBuf
+
+		if(refresh)	// draw the background image
+		{
+			orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
+
+			// first, an image
+			if(png) orbis2dDrawTexture(png, 700, 300); // uses alpha
+
+			// draw a line
+			orbis2dDrawLineColor(140, 20, 100, 290, 0xff2200ff);
+
+			orbis2dDrawCircleColor(1000, 250, 128, 1, 0x402200ff);
+
+			orbis2dDrawCircleColor(1100, 260, 100, 1, 0x800000ff);
+
+			orbis2dDrawCircleColor(1020, 230, 82, 0, 0xFF6600ff);
+
+			orbis2dDrawRectColor(300, 280, 100, 180, color);
+
+			if(tentacle) orbis2dDrawTexture(tentacle, 200, 400); // uses alpha
+
+			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
+			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
+		}
+
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
-				
+
+		// text
+		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
+
+		// testing sine in a scroller
+		draw_sinetext(150);
+		move_sinetext();
+
 		//flush and flip
 		orbis2dFinishDrawing(flipArg);
-				
+
 		//swap buffers
 		orbis2dSwapBuffers();
 		flipArg++;
+
+		sceKernelUsleep(1000);
 	}
 	
 	orbisAudioResume(0);
 	Mod_End();
+	
 	//wait for current display buffer
 	orbis2dStartDrawing();
 
