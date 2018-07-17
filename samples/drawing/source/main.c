@@ -26,7 +26,7 @@ int R,G,B;
 uint32_t color=0x80ff0000;
 int flag=0;
 
-Orbis2dConfig *conf;
+Orbis2dConfig  *conf;
 OrbisPadConfig *confPad;
 
 #define PNG_FILE_PATH  "host0:uni.png"
@@ -257,8 +257,8 @@ void initApp()
 }
 
 
-uint c1, c2;
-char tmp_ln[256];
+uint c1, c2;       // colors to fade text
+char tmp_ln[256];  // buffer to store text
 
 int main(int argc, char *argv[])
 {
@@ -283,13 +283,13 @@ int main(int argc, char *argv[])
 	
 	init_sinetext();  // initial setup
 	
-	
+	// define text fading colors
 	c1 = 0xFFFF22AA;
 	c2 = 0xFF221133;
-	update_gradient(&c1, &c2);
+	update_gradient(&c1, &c2);  // compute internal fading colors
 
 	sprintf(tmp_ln, "hella ZeraTron!");
-	int tx = get_aligned_x(tmp_ln, CENTER);
+	int tx = get_aligned_x(tmp_ln, CENTER);  // center text
 
 	png=orbis2dLoadPngFromHost_v2(PNG_FILE_PATH);
 	if(!png)

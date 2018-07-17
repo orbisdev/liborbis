@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
 	Mod_Init(0);
 	Mod_Load("host0:zweifeld.mod");
 	Mod_Play();
-    orbisAudioResume(0);
+	orbisAudioResume(0);
 	
 	
 	
