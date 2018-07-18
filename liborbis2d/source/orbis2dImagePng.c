@@ -186,16 +186,15 @@ Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *path)
 	buf=malloc(filesize);         //Reserve  memory for read buffer
 
 	int numread=ps4LinkRead(fd,buf,filesize);  //Read filsesize bytes to buf
+	ps4LinkClose(fd);  //Close file
+
 	if(numread!=filesize)                      //if we don't get filesize bytes we are in trouble
 	{
 		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkRead returned error %d\n",numread);
-		ps4LinkClose(fd);
 		return NULL;
 	}
-	ps4LinkClose(fd);  //Close file
 
 	Orbis2dTexture *texture=orbis2dLoadPngFromBuffer(buf);  //create png from buf
-	free(buf), buf=NULL;
 
 	return texture;
 }
