@@ -10,10 +10,12 @@
 #include <modplayer.h>
 #include <ps4link.h>
 #include <debugnet.h>
+#include <orbisXbmFont.h>
 
+#include "starfield.h"
 
-int x=1280/2;
-int y=720/2;
+int x=ATTR_WIDTH /2;
+int y=ATTR_HEIGHT/2;
 int w=1280/64;
 int h=1280/64;
 int step=10;
@@ -26,6 +28,9 @@ int flag=0;
 
 Orbis2dConfig *conf;
 OrbisPadConfig *confPad;
+
+
+static char refresh = 1;
 
 typedef struct OrbisGlobalConf
 {
@@ -153,7 +158,7 @@ void updateController()
 			G=rand()%256;
 			B=rand()%256;
 			color=0x80000000|R<<16|G<<8|B;
-			orbisAudioStop();
+			//orbisAudioStop();
 			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_SQUARE))
@@ -164,8 +169,12 @@ void updateController()
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1))
 		{
-			debugNetPrintf(DEBUG,"L1 pressed\n");
-			
+			R=rand()%256;
+			G=rand()%256;
+			B=rand()%256;
+			conf->bgColor=0xFF000000|R<<16|G<<8|B;
+			debugNetPrintf(DEBUG,"L1 pressed, new random() bgColor: %8x\n", conf->bgColor);
+			refresh = 1;
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L2))
 		{
@@ -236,6 +245,11 @@ void initApp()
 	}
 	
 }
+
+
+uint c1, c2;       // colors to fade text
+char tmp_ln[256];  // buffer to store text
+
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -251,6 +265,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	initApp();
+
+	init_starfield();
 	
 	Mod_Init(0);
 	Mod_Load("host0:zweifeld.mod");
@@ -258,7 +274,14 @@ int main(int argc, char *argv[])
 	orbisAudioResume(0);
 	
 	
-	
+	// define text fading colors
+	c1 = 0xFFFF22AA;
+	c2 = 0xFF221133;
+	update_gradient(&c1, &c2);  // compute internal fading colors
+
+	sprintf(tmp_ln, "hella ZeraTron!");
+	int tx = get_aligned_x(tmp_ln, CENTER);  // center text
+
 	
 	while(flag)
 	{
@@ -273,18 +296,36 @@ int main(int argc, char *argv[])
 		//wait for current display buffer
 		orbis2dStartDrawing();
 
-		// clear with background (default white) to the current display buffer 
-		orbis2dClearBuffer(1);
-				
+		// clear the current display buffer
+		orbis2dClearBuffer(0);  // uses cached dumpBuf
+
+		if(refresh)	// draw the background image
+		{
+			orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
+
+			// draw a background
+
+			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
+			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
+		}
+
+		// draw stars
+		draw_starfield();
+
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
 				
+		// draw text with Xbm_Font
+		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
+
 		//flush and flip
 		orbis2dFinishDrawing(flipArg);
 				
 		//swap buffers
 		orbis2dSwapBuffers();
 		flipArg++;
+
+		sceKernelUsleep(1000);
 	}
 	
 	orbisAudioResume(0);
