@@ -26,7 +26,7 @@ int R,G,B;
 uint32_t color=0x80ff0000;
 int flag=0;
 
-Orbis2dConfig *conf;
+Orbis2dConfig  *conf;
 OrbisPadConfig *confPad;
 
 
@@ -64,7 +64,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L1|ORBISPAD_R1);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1|ORBISPAD_R2) || orbisPadGetButtonHold(ORBISPAD_L1|ORBISPAD_R2))
 		{
@@ -72,8 +71,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L1|ORBISPAD_R2);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L2|ORBISPAD_R1) || orbisPadGetButtonHold(ORBISPAD_L2|ORBISPAD_R1) )
 		{
@@ -81,7 +78,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L2|ORBISPAD_R1);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_UP) || orbisPadGetButtonHold(ORBISPAD_UP))
 		{
@@ -140,7 +136,6 @@ void updateController()
 			debugNetPrintf(DEBUG,"Triangle pressed exit\n");
 			
 			flag=0;
-				
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_CIRCLE))
 		{
@@ -149,7 +144,6 @@ void updateController()
 			y=720/2;
 			color=0x80ff0000;	
 			orbisAudioResume(0);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_CROSS))
 		{
@@ -159,13 +153,11 @@ void updateController()
 			B=rand()%256;
 			color=0x80000000|R<<16|G<<8|B;
 			//orbisAudioStop();
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_SQUARE))
 		{
 			debugNetPrintf(DEBUG,"Square pressed\n");
 			orbisAudioPause(0);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1))
 		{
@@ -184,7 +176,7 @@ void updateController()
 		if(orbisPadGetButtonPressed(ORBISPAD_R1))
 		{
 			debugNetPrintf(DEBUG,"R1 pressed\n");
-			
+
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_R2))
 		{
@@ -225,7 +217,7 @@ void initApp()
 	if(ret==1)
 	{
 		
-	    confPad=orbisPadGetConf();
+		confPad=orbisPadGetConf();
 	
 		ret=orbis2dInitWithConf(myConf->conf);
 		
@@ -266,14 +258,13 @@ int main(int argc, char *argv[])
 	}
 	initApp();
 
-	init_starfield();
-	
+	init_starfield();  // initial setup
+
 	Mod_Init(0);
 	Mod_Load("host0:zweifeld.mod");
 	Mod_Play();
 	orbisAudioResume(0);
-	
-	
+
 	// define text fading colors
 	c1 = 0xFFFF22AA;
 	c2 = 0xFF221133;
@@ -291,8 +282,7 @@ int main(int argc, char *argv[])
 		// /\ to exit
 		// dpad move rectangle
 		updateController();
-				
-				
+
 		//wait for current display buffer
 		orbis2dStartDrawing();
 
@@ -318,18 +308,21 @@ int main(int argc, char *argv[])
 		// draw text with Xbm_Font
 		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
 
+
 		//flush and flip
 		orbis2dFinishDrawing(flipArg);
-				
+
 		//swap buffers
 		orbis2dSwapBuffers();
 		flipArg++;
 
+		// take a breath, 1 microsecond
 		sceKernelUsleep(1000);
 	}
 	
 	orbisAudioResume(0);
 	Mod_End();
+
 	//wait for current display buffer
 	orbis2dStartDrawing();
 
