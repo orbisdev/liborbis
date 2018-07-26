@@ -609,3 +609,7 @@ int orbis2dInit()
 	return orbconf->orbis2d_initialized;
 }
 
+uint16_t get_image_aligned_x(Orbis2dTexture *texture, const uint8_t alignment)
+{
+    return (uint16_t)((ATTR_WIDTH - texture->width) / alignment);
+}
