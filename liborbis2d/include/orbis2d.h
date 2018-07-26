@@ -91,3 +91,10 @@ Orbis2dTexture *orbis2dLoadPngFromBuffer(const void *buffer);
 Orbis2dTexture *orbis2dLoadPngFromHost(const char *filename);
 Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *filename);
 void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y);
+/***********************************************************************
+* compute x to align image into canvas
+*
+* uint8_t align.  = RIGHT / CENTER
+***********************************************************************/
+uint16_t get_image_aligned_x(Orbis2dTexture *texture, const uint8_t alignment);
+
