@@ -43,6 +43,17 @@ typedef struct OrbisGlobalConf
 
 OrbisGlobalConf *myConf;
 
+/* to track a random rectangle */
+static short rx, rw, ry, rh;
+static uint32_t rcolor = 0xFF551199;
+
+static void rr()  // randomize rect
+{
+	rx = rand()%ATTR_WIDTH,    ry = rand()%ATTR_HEIGHT;
+	rw = rand()%ATTR_WIDTH /2, rh = rand()%ATTR_HEIGHT /2;
+	rcolor = ARGB(0xFF, rand()%256, rand()%256, rand()%256);
+}
+
 void updateController()
 {
 	int ret;
@@ -170,7 +181,8 @@ void updateController()
 		if(orbisPadGetButtonPressed(ORBISPAD_L2))
 		{
 			debugNetPrintf(DEBUG,"L2 pressed\n");
-			
+			rr();
+			refresh = 1;
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_R1))
 		{
@@ -270,6 +282,7 @@ int main(int argc, char *argv[])
 	sprintf(tmp_ln, "hella ZeraTron!");
 	int tx = get_aligned_x(tmp_ln, CENTER);  // center text
 	
+	rr();
 	
 	while(flag)
 	{
@@ -291,6 +304,7 @@ int main(int argc, char *argv[])
 			orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
 
 			// draw a background
+			orbis2dDrawRectColor(rx, rw, ry, rh, rcolor);
 
 			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
 			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
