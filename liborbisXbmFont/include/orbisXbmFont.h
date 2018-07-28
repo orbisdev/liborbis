@@ -20,18 +20,6 @@
 #define SIMPLE_GRADIENT_STEPS    ((uint8_t)(FONT_H /2))  // steps we split delta
 
 
-// compose ARGB color by components
-#define ARGB(a, r, g, b) ( \
-          (((a) &0xFF) <<24) | (((r) &0xFF) <<16) | \
-          (((g) &0xFF) << 8) | (((b) &0xFF) << 0))
-
-// extract single component form ARGB color
-#define GET_A(color) ((color >>24) &0xFF)
-#define GET_R(color) ((color >>16) &0xFF)
-#define GET_G(color) ((color >> 8) &0xFF)
-#define GET_B(color) ((color >> 0) &0xFF)
-
-
 /***********************************************************************
 * update_gradient
 *
