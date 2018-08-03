@@ -391,6 +391,15 @@ void orbis2dPutImage5(uint32_t *buf,int x, int y, int w, int h)
 		}
 	}
 }
+
+void orbis2dDrawBoxColor(int x, int w, int y, int h, uint32_t color)
+{
+	orbis2dDrawLineColor(x,     y,     x + w, y,     color);
+	orbis2dDrawLineColor(x + w, y,     x + w, y + h, color);
+	orbis2dDrawLineColor(x + w, y + h, x,     y + h, color);
+	orbis2dDrawLineColor(x,     y + h, x,     y,     color);
+}
+
 void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color)
 {
 	int x0, y0;
