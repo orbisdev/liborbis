@@ -81,6 +81,7 @@ Orbis2dConfig *orbis2dGetConf();
 void orbis2dSwapBuffers();
 void orbis2dClearBuffer(char flag);
 void orbis2dDumpBuffer();
+void orbis2dDrawBoxColor(int x, int w, int y, int h, uint32_t color);
 void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color);
 void orbis2dDrawPixelColor(int x, int y, uint32_t pixelColor);
 void orbis2dDrawPixelColor_WAlpha(int x, int y, uint32_t pixelColor);
