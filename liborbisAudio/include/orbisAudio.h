@@ -72,6 +72,11 @@ typedef struct OrbisAudioConfig
 
 int orbisAudioInit();
 void orbisAudioFinish();
+int orbisAudioGetStatus();
+int orbisAudioGetChannelStatus(int chan);
+int orbisAudioGetHandle(int chan);
+int orbisAudioPlayBlock(unsigned int channel,unsigned int vol1,unsigned int vol2,void *buf);
+int orbisAudioInitChannelWithoutCallback(unsigned int channel, unsigned int samples, unsigned int frequency, int format);
 int orbisAudioInitChannel(unsigned int channel, unsigned int samples, unsigned int frequency, int format);
 int orbisAudioPause(unsigned int channel);
 int orbisAudioResume(unsigned int channel);

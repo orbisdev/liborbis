@@ -119,7 +119,29 @@ int orbis2dInitWithConf(Orbis2dConfig *conf)
 		return 0;
 	}
 }
-
+uint32_t orbis2dGetBgColor()
+{
+	if(orbconf!=NULL)
+	{
+		return orbconf->bgColor;
+	}
+	return 0x80ffffff;
+}
+void orbis2dSetBgColor(uint32_t color)
+{
+	if(orbconf!=NULL)
+	{
+		orbconf->bgColor=color;
+	}
+}
+int32_t orbis2dGetStatus()
+{
+	if(orbconf!=NULL)
+	{
+		return orbconf->orbis2d_initialized;
+	}
+	return -1;
+}
 int orbis2dWaitFlipArg(SceKernelEqueue *flipQueue)
 {
 	int ret;

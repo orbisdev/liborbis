@@ -349,7 +349,6 @@ uint8_t orbisKeyboardGetMsxKey()
 	}
 	return 0;
 }
-
 uint8_t orbisKeyboardGetMsxKeyStatus()
 {
 	if(orbisKeyboardConf!=NULL)
@@ -405,7 +404,59 @@ int orbisKeyboardCreateConf()
 	//something weird happened
 	return -1;			
 }
-
+int orbisKeyboardGetHandle()
+{
+	//return 0 when keyboard is opened simulate handle for sdl stuff
+	return	orbisKeyboardConf->status;
+}
+int orbisKeyboardGetStatus()
+{
+	return	orbisKeyboardConf->orbiskeyboard_initialized;
+}
+uint8_t orbisKeyboardGetKey()
+{
+	return	orbisKeyboardConf->key;
+}
+int orbisKeyboardGetCapsKey()
+{
+	return	orbisKeyboardConf->caps_key;
+}
+int orbisKeyboardGetControlKeyLeft()
+{
+	return	orbisKeyboardConf->control_key_left;
+}
+int orbisKeyboardGetControlKeyRight()
+{
+	return	orbisKeyboardConf->control_key_right;
+}
+int orbisKeyboardGetShiftKeyLeft()
+{
+	return	orbisKeyboardConf->shift_key_left;
+}
+int orbisKeyboardGetShiftKeyRight()
+{
+	return	orbisKeyboardConf->shift_key_right;
+}
+int orbisKeyboardGetAltKeyLeft()
+{
+	return	orbisKeyboardConf->alt_key_left;
+}
+int orbisKeyboardGetAltKeyRight()
+{
+	return	orbisKeyboardConf->alt_key_right;
+}
+int orbisKeyboardGetCmdKeyLeft()
+{
+	return	orbisKeyboardConf->cmd_key_left;
+}
+int orbisKeyboardGetCmdKeyRight()
+{
+	return	orbisKeyboardConf->cmd_key_right;
+}
+uint8_t orbisKeyboardGetSpecials()
+{
+	return	orbisKeyboardConf->control_key_left|orbisKeyboardConf->control_key_right<<1|orbisKeyboardConf->shift_key_left<<2|orbisKeyboardConf->shift_key_right<<3|orbisKeyboardConf->alt_key_left<<4|orbisKeyboardConf->alt_key_right<<5|orbisKeyboardConf->cmd_key_left<<6|orbisKeyboardConf->alt_key_right<<7;
+}
 void orbisKeybordGetSpecialKeys(const OrbisKeyboardEvent *e)
 {
 	if(e->param.keycode.status&0x00020000)
