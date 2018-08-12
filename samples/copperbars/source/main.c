@@ -10,7 +10,10 @@
 #include <modplayer.h>
 #include <ps4link.h>
 #include <debugnet.h>
+#include <orbisXbmFont.h>
 
+#include "scroller.h"  // sinusscroller definitions
+#include "copper.h"
 
 int x=ATTR_WIDTH /2;
 int y=ATTR_HEIGHT/2;
@@ -24,8 +27,11 @@ int R,G,B;
 uint32_t color=0x80ff0000;
 int flag=0;
 
-Orbis2dConfig *conf;
+Orbis2dConfig  *conf;
 OrbisPadConfig *confPad;
+
+
+static char refresh = 1;
 
 typedef struct OrbisGlobalConf
 {
@@ -59,7 +65,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L1|ORBISPAD_R1);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1|ORBISPAD_R2) || orbisPadGetButtonHold(ORBISPAD_L1|ORBISPAD_R2))
 		{
@@ -67,8 +72,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L1|ORBISPAD_R2);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L2|ORBISPAD_R1) || orbisPadGetButtonHold(ORBISPAD_L2|ORBISPAD_R1) )
 		{
@@ -76,7 +79,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L2|ORBISPAD_R1);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_UP) || orbisPadGetButtonHold(ORBISPAD_UP))
 		{
@@ -103,7 +105,7 @@ void updateController()
 			{
 				y=conf->height-1-step;
 			}
-		}						
+		}
 		if(orbisPadGetButtonPressed(ORBISPAD_RIGHT) || orbisPadGetButtonHold(ORBISPAD_RIGHT))
 		{
 			debugNetPrintf(DEBUG,"Right pressed\n");
@@ -135,7 +137,6 @@ void updateController()
 			debugNetPrintf(DEBUG,"Triangle pressed exit\n");
 			
 			flag=0;
-				
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_CIRCLE))
 		{
@@ -144,7 +145,6 @@ void updateController()
 			y=720/2;
 			color=0x80ff0000;	
 			orbisAudioResume(0);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_CROSS))
 		{
@@ -153,19 +153,21 @@ void updateController()
 			G=rand()%256;
 			B=rand()%256;
 			color=0x80000000|R<<16|G<<8|B;
-			orbisAudioStop();
-			
+			//orbisAudioStop();
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_SQUARE))
 		{
 			debugNetPrintf(DEBUG,"Square pressed\n");
 			orbisAudioPause(0);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1))
 		{
-			debugNetPrintf(DEBUG,"L1 pressed\n");
-			
+			R=rand()%256;
+			G=rand()%256;
+			B=rand()%256;
+			conf->bgColor=0xFF000000|R<<16|G<<8|B;
+			debugNetPrintf(DEBUG,"L1 pressed, new random() bgColor: %8x\n", conf->bgColor);
+			refresh = 1;
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L2))
 		{
@@ -175,15 +177,11 @@ void updateController()
 		if(orbisPadGetButtonPressed(ORBISPAD_R1))
 		{
 			debugNetPrintf(DEBUG,"R1 pressed\n");
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_R2))
 		{
 			debugNetPrintf(DEBUG,"R2 pressed\n");
-			
 		}
-		
-			
 	}
 }
 void finishApp()
@@ -194,7 +192,6 @@ void finishApp()
 	orbis2dFinish();
 	
 	ps4LinkFinish();
-		
 }
 void initApp()
 {
@@ -203,7 +200,6 @@ void initApp()
 	
 	//while(!ps4LinkRequestsIsConnected())
 	//{
-		
 	//}
 	debugNetPrintf(DEBUG,"[PS4LINK] Initialized and connected from pc/mac ready to receive commands\n");
 	
@@ -215,12 +211,10 @@ void initApp()
 	
 	if(ret==1)
 	{
-		
-	    confPad=orbisPadGetConf();
-	
+		confPad=orbisPadGetConf();
+
 		ret=orbis2dInitWithConf(myConf->conf);
-		
-		
+
 		if(ret==1)
 		{
 			conf=orbis2dGetConf();
@@ -236,6 +230,11 @@ void initApp()
 	}
 	
 }
+
+
+uint c1, c2;       // colors to fade text
+char tmp_ln[256];  // buffer to store text
+
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -251,14 +250,25 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	initApp();
-	
+
+	init_sinetext();  // initial setup
+	init_copperbars();
+
 	Mod_Init(0);
 	Mod_Load("host0:zweifeld.mod");
 	Mod_Play();
 	orbisAudioResume(0);
-	
-	
-	
+
+	// define text fading colors
+	c1 = 0xFFFF00AA;
+	c2 = 0xFF440066;
+	update_gradient(&c1, &c2);  // compute internal fading colors
+
+	sprintf(tmp_ln, "hella ZeraTron!");
+	int tx = get_aligned_x(tmp_ln, CENTER);  // center text
+
+	// setup a black background
+	conf->bgColor = 0xFF000000;
 	
 	while(flag)
 	{
@@ -268,41 +278,54 @@ int main(int argc, char *argv[])
 		// /\ to exit
 		// dpad move rectangle
 		updateController();
-				
-				
+
 		//wait for current display buffer
 		orbis2dStartDrawing();
 
-		// clear with background (default white) to the current display buffer 
-		orbis2dClearBuffer(1);
-				
+		// clear the current display buffer
+		orbis2dClearBuffer(1);  // (don't use cached dumpBuf)
+
+		// draw a background
+		draw_copperbars();
+
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
-				
+
+		// draw text with Xbm_Font
+		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
+
+		// testing sine in a scroller
+		draw_sinetext(ATTR_HEIGHT - 150);
+		move_sinetext();
+
 		//flush and flip
 		orbis2dFinishDrawing(flipArg);
-				
+
 		//swap buffers
 		orbis2dSwapBuffers();
 		flipArg++;
+
+		// take a breath, 1 microsecond
+		sceKernelUsleep(1000);
 	}
 	
 	orbisAudioResume(0);
 	Mod_End();
+
 	//wait for current display buffer
 	orbis2dStartDrawing();
 
 	// clear with background (default white) to the current display buffer 
 	orbis2dClearBuffer(1);
-					
+
 	//flush and flip
 	orbis2dFinishDrawing(flipArg);
-			
+
 	//swap buffers
 	orbis2dSwapBuffers();
-	
+
 	finishApp();
-	
+
 	myConf->orbisLinkFlag=1;
 
 
