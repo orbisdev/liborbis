@@ -329,5 +329,5 @@ int main(int argc, char *argv[])
 	myConf->orbisLinkFlag=1;
 
 
-	return 0;
+	exit(EXIT_SUCCESS);
 }

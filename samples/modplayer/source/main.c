@@ -12,8 +12,8 @@
 #include <debugnet.h>
 
 
-int x=1280/2;
-int y=720/2;
+int x=ATTR_WIDTH /2;
+int y=ATTR_HEIGHT/2;
 int w=1280/64;
 int h=1280/64;
 int step=10;
@@ -306,5 +306,5 @@ int main(int argc, char *argv[])
 	myConf->orbisLinkFlag=1;
 
 
-	return 0;
+	exit(EXIT_SUCCESS);
 }
