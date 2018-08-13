@@ -22,6 +22,16 @@
 #define ATTR_HEIGHT 720
 
 
+// compose ARGB color by components
+#define ARGB(a, r, g, b) ( \
+          (((a) &0xFF) <<24) | (((r) &0xFF) <<16) | \
+          (((g) &0xFF) << 8) | (((b) &0xFF) << 0))
+
+// extract single component form ARGB color
+#define GET_A(color) ((color >>24) &0xFF)
+#define GET_R(color) ((color >>16) &0xFF)
+#define GET_G(color) ((color >> 8) &0xFF)
+#define GET_B(color) ((color >> 0) &0xFF)
 
 
 typedef struct Orbis2dConfig
@@ -71,6 +81,7 @@ Orbis2dConfig *orbis2dGetConf();
 void orbis2dSwapBuffers();
 void orbis2dClearBuffer(char flag);
 void orbis2dDumpBuffer();
+void orbis2dDrawBoxColor(int x, int w, int y, int h, uint32_t color);
 void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color);
 void orbis2dDrawPixelColor(int x, int y, uint32_t pixelColor);
 void orbis2dDrawPixelColor_WAlpha(int x, int y, uint32_t pixelColor);
@@ -87,7 +98,14 @@ Orbis2dTexture * orbis2dCreateEmptyTexture(unsigned int w, unsigned int h);
 void orbis2dDestroyTexture(Orbis2dTexture *texture);
 uint32_t *orbis2dTextureGetDataPointer(Orbis2dTexture *texture);
 uint32_t orbis2dTextureGetStride(Orbis2dTexture *texture);
+uint32_t orbis2dTextureGetWidth(Orbis2dTexture *texture);
+uint32_t orbis2dTextureGetHeight(Orbis2dTexture *texture);
 Orbis2dTexture *orbis2dLoadPngFromBuffer(const void *buffer);
 Orbis2dTexture *orbis2dLoadPngFromHost(const char *filename);
 Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *filename);
+uint16_t orbis2dGetTextureXAlign(Orbis2dTexture *texture, const uint8_t alignment);
+uint16_t orbis2dGetTextureYAlign(Orbis2dTexture *texture, const uint8_t alignment);
 void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y);
+uint32_t orbis2dGetBgColor();
+void orbis2dSetBgColor(uint32_t color);
+int32_t orbis2dGetStatus();

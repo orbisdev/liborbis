@@ -67,7 +67,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L1|ORBISPAD_R1);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1|ORBISPAD_R2) || orbisPadGetButtonHold(ORBISPAD_L1|ORBISPAD_R2))
 		{
@@ -75,8 +74,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L1|ORBISPAD_R2);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L2|ORBISPAD_R1) || orbisPadGetButtonHold(ORBISPAD_L2|ORBISPAD_R1) )
 		{
@@ -84,7 +81,6 @@ void updateController()
 			buttons=orbisPadGetCurrentButtonsPressed();
 			buttons&= ~(ORBISPAD_L2|ORBISPAD_R1);
 			orbisPadSetCurrentButtonsPressed(buttons);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_UP) || orbisPadGetButtonHold(ORBISPAD_UP))
 		{
@@ -143,7 +139,6 @@ void updateController()
 			debugNetPrintf(DEBUG,"Triangle pressed exit\n");
 			
 			flag=0;
-				
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_CIRCLE))
 		{
@@ -152,7 +147,6 @@ void updateController()
 			y=720/2;
 			color=0x80ff0000;	
 			orbisAudioResume(0);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_CROSS))
 		{
@@ -162,13 +156,11 @@ void updateController()
 			B=rand()%256;
 			color=0x80000000|R<<16|G<<8|B;
 			orbisAudioStop();
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_SQUARE))
 		{
 			debugNetPrintf(DEBUG,"Square pressed\n");
 			orbisAudioPause(0);
-			
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_L1))
 		{
@@ -187,8 +179,9 @@ void updateController()
 		if(orbisPadGetButtonPressed(ORBISPAD_R1))
 		{
 			debugNetPrintf(DEBUG,"R1 pressed\n");
+
 			if(!tentacle)
-			    tentacle=orbis2dLoadPngFromHost_v2("host0:tentacle.png");
+				tentacle=orbis2dLoadPngFromHost_v2("host0:tentacle.png");
 			if(!tentacle)
 				debugNetPrintf(ERROR,"Problem loading Icon image file\n");
 			refresh = 1;
@@ -235,7 +228,7 @@ void initApp()
 	if(ret==1)
 	{
 		
-	    confPad=orbisPadGetConf();
+		confPad=orbisPadGetConf();
 	
 		ret=orbis2dInitWithConf(myConf->conf);
 		
@@ -276,13 +269,13 @@ int main(int argc, char *argv[])
 	}
 	initApp();
 	
+	init_sinetext();  // initial setup
+
 	Mod_Init(0);
 	Mod_Load("host0:zweifeld.mod");
 	Mod_Play();
-    orbisAudioResume(0);
-	
-	init_sinetext();  // initial setup
-	
+	orbisAudioResume(0);
+
 	// define text fading colors
 	c1 = 0xFFFF22AA;
 	c2 = 0xFF221133;
@@ -303,8 +296,7 @@ int main(int argc, char *argv[])
 		// /\ to exit
 		// dpad move rectangle
 		updateController();
-				
-				
+
 		//wait for current display buffer
 		orbis2dStartDrawing();
 
@@ -314,6 +306,8 @@ int main(int argc, char *argv[])
 		if(refresh)	// draw the background image
 		{
 			orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
+
+			// draw a background
 
 			// first, an image
 			if(png) orbis2dDrawTexture(png, 700, 300); // uses alpha
@@ -338,7 +332,7 @@ int main(int argc, char *argv[])
 		//default red is here press X to random color
 		orbis2dDrawRectColor(x,w,y,h,color);
 
-		// text
+		// draw text with Xbm_Font
 		print_text(tx, ATTR_HEIGHT /2, tmp_ln);
 
 		// testing sine in a scroller
@@ -352,12 +346,13 @@ int main(int argc, char *argv[])
 		orbis2dSwapBuffers();
 		flipArg++;
 
+		// take a breath, 1 microsecond
 		sceKernelUsleep(1000);
 	}
 	
 	orbisAudioResume(0);
 	Mod_End();
-	
+
 	//wait for current display buffer
 	orbis2dStartDrawing();
 
@@ -375,5 +370,5 @@ int main(int argc, char *argv[])
 	myConf->orbisLinkFlag=1;
 
 
-	return 0;
+	exit(EXIT_SUCCESS);
 }

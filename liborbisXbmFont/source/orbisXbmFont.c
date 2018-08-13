@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <orbis2d.h>  // orbis2dDrawPixelColor()
+#include <orbis2d.h>  // orbis2dDrawPixelColor(), ARGB(), GET_A(), GET_R(), GET_G(), GET_B()
 
 #include "orbisXbmFont.h"
 

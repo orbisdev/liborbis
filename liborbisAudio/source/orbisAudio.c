@@ -153,8 +153,7 @@ int orbisAudioInitWithConf(OrbisAudioConfig *conf)
 		return 0;
 	}
 }
-
-static inline int orbisAudioPlayBlock(unsigned int channel,unsigned int vol1,unsigned int vol2,void *buf)
+int orbisAudioPlayBlock(unsigned int channel,unsigned int vol1,unsigned int vol2,void *buf)
 {
 
 	int vols[2]={vol1,vol2};	
@@ -264,6 +263,107 @@ void orbisAudioDestroyBuffersChannel(unsigned int channel)
 		}					
 
 	}
+}
+int orbisAudioGetStatus()
+{
+	if(orbisAudioConf!=NULL)
+	{
+		return	orbisAudioConf->orbisaudio_initialized;
+	}
+	else
+	{
+		return -1;
+	}
+}
+int orbisAudioGetChannelStatus(int chan)
+{
+	if(orbisAudioConf!=NULL)
+	{
+		if(orbisAudioConf->channels[chan]!=NULL)
+		{
+			return 	orbisAudioConf->channels[chan]->orbisaudiochannel_initialized;
+		}
+		return -1;
+	}
+	else
+	{
+		return -1;
+	}
+}
+int orbisAudioGetHandle(int chan)
+{
+	if(orbisAudioConf!=NULL)
+	{
+		if(orbisAudioConf->channels[chan]!=NULL)
+		{
+			return	orbisAudioConf->channels[chan]->audioHandle;
+		}
+		return -1;
+	}
+	else
+	{
+		return -1;
+	}
+}
+int orbisAudioInitChannelWithoutCallback(unsigned int channel, unsigned int samples, unsigned int frequency, int format)
+{
+	int ret;
+	unsigned int numSamples=0;
+	int handle;
+	unsigned int localChannel=channel;
+	char label[32];
+	strcpy(label,"audiotX");
+	label[6]='0'+channel;	
+	if(orbisAudioConf!=NULL)
+	{
+		if(orbisAudioConf->channels[localChannel]!=NULL)
+		{
+			if(orbisAudioConf->channels[localChannel]->orbisaudiochannel_initialized==-1)
+			{
+				if (samples<ORBISAUDIO_MIN_LEN)
+				{
+					numSamples=ORBISAUDIO_MIN_LEN;
+				} 
+				else
+				{
+					numSamples=ORBISAUDIO_ALIGN_SAMPLE(samples,ORBISAUDIO_MIN_LEN);
+					if(numSamples>ORBISAUDIO_MAX_LEN)
+					{
+						numSamples=ORBISAUDIO_MAX_LEN;
+					}
+				}
+				ret=orbisAudioCreateBuffersChannel(localChannel,numSamples,format);
+				if(ret!=0)
+				{
+					debugNetPrintf(DEBUG,"[orbisAudio] error creating buffers for audio channel %d\n",localChannel);
+					orbisAudioDestroyBuffersChannel(localChannel);
+					orbisAudioConf->channels[localChannel]->orbisaudiochannel_initialized=-1;
+				}
+				else
+				{
+					debugNetPrintf(DEBUG,"[orbisAudio] sceAudioOutOpen  %d samples\n",numSamples);
+					
+					handle=sceAudioOutOpen(0xff,localChannel,0,numSamples,frequency,format);
+					if(handle>0)
+					{
+						orbisAudioConf->channels[localChannel]->audioHandle=handle;	
+						orbisAudioConf->channels[localChannel]->orbisaudiochannel_initialized=1;
+						return 0;
+					}
+					else
+					{
+						debugNetPrintf(DEBUG,"[orbisAudio] error opening audio channel %d 0x%08X\n",localChannel, handle);
+						orbisAudioConf->channels[localChannel]->orbisaudiochannel_initialized=-1;				
+					}
+				}
+			}		
+			else
+			{
+				debugNetPrintf(DEBUG,"[orbisAudio] audio channel %d already initialized",localChannel);
+			}
+		}
+	}
+	return -1;
 }
 int orbisAudioInitChannel(unsigned int channel, unsigned int samples, unsigned int frequency, int format)
 {

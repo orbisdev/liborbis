@@ -119,7 +119,29 @@ int orbis2dInitWithConf(Orbis2dConfig *conf)
 		return 0;
 	}
 }
-
+uint32_t orbis2dGetBgColor()
+{
+	if(orbconf!=NULL)
+	{
+		return orbconf->bgColor;
+	}
+	return 0x80ffffff;
+}
+void orbis2dSetBgColor(uint32_t color)
+{
+	if(orbconf!=NULL)
+	{
+		orbconf->bgColor=color;
+	}
+}
+int32_t orbis2dGetStatus()
+{
+	if(orbconf!=NULL)
+	{
+		return orbconf->orbis2d_initialized;
+	}
+	return -1;
+}
 int orbis2dWaitFlipArg(SceKernelEqueue *flipQueue)
 {
 	int ret;
@@ -391,6 +413,15 @@ void orbis2dPutImage5(uint32_t *buf,int x, int y, int w, int h)
 		}
 	}
 }
+
+void orbis2dDrawBoxColor(int x, int w, int y, int h, uint32_t color)
+{
+	orbis2dDrawLineColor(x,     y,     x + w, y,     color);
+	orbis2dDrawLineColor(x + w, y,     x + w, y + h, color);
+	orbis2dDrawLineColor(x + w, y + h, x,     y + h, color);
+	orbis2dDrawLineColor(x,     y + h, x,     y,     color);
+}
+
 void orbis2dDrawRectColor(int x, int w, int y, int h, uint32_t color)
 {
 	int x0, y0;

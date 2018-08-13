@@ -46,6 +46,15 @@ uint32_t orbis2dTextureGetStride(Orbis2dTexture *texture)
 {
 	return texture->width;
 }
+uint16_t orbis2dGetTextureXAlign(Orbis2dTexture *texture, const uint8_t alignment)
+{
+    return (uint16_t)((ATTR_WIDTH - texture->width) / alignment);
+}
+
+uint16_t orbis2dGetTextureYAlign(Orbis2dTexture *texture, const uint8_t alignment)
+{
+    return (uint16_t)((ATTR_HEIGHT - texture->height) / alignment);
+}
 void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y)
 {
 	uint32_t *buf=NULL;
