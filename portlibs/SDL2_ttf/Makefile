@@ -20,8 +20,9 @@ AllTarget = $(OutPath)/$(TargetFile).a
 
 include $(Ps4Sdk)/make/ps4sdk.mk
 
-IncludePath += -I$(Ps4Sdk)/include/SDL2
+IncludePath += -I$(Ps4Sdk)/include/SDL2 -I$(Ps4Sdk)/include/freetype2
 
+LinkerFlags += -lfreetype
 
 $(OutPath)/$(TargetFile).a: $(ObjectFiles)
 	$(dirp)
