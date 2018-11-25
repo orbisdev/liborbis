@@ -17,8 +17,8 @@
 #include "ps4link.h"
 #include "ps4link_internal.h"
 
-
-#define PACKET_MAXSIZE 4096
+//4096 ORIG
+#define PACKET_MAXSIZE 32768
 
 static char send_packet[PACKET_MAXSIZE] __attribute__((aligned(16)));
 static char recv_packet[PACKET_MAXSIZE] __attribute__((aligned(16)));
@@ -28,42 +28,6 @@ extern ps4LinkConfiguration *configuration;
 
 int ps4link_requests_connected;
 
-/*int ps4LinkConnect()
-{
-	ps4link_pkt_conn_req *connreq;
-	ps4link_pkt_conn_rly *connrly;
-
-	if (ps4LinkGetValue(FILEIO_SOCK) < 0) {
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4link_fileio_sock is not active\n");
-		
-		return -1;
-	}
-
-	debugNetPrintf(DEBUG,"[PS4LINK] conn req\n");
-
-	connreq = (ps4link_pkt_conn_req *)&send_packet[0];
-
-	// Build packet
-	connreq->cmd = sceNetHtonl(PS4LINK_CONN_CMD);
-	connreq->len = sceNetHtons((unsigned short)sizeof(ps4link_pkt_conn_req));
-
-	if (ps4link_send(ps4LinkGetValue(FILEIO_SOCK),connreq, sizeof(ps4link_pkt_conn_req), MSG_DONTWAIT) < 0) {
-		return -1;
-	}
-
-	if (!ps4link_accept_pkt(ps4LinkGetValue(FILEIO_SOCK), recv_packet, sizeof(ps4link_pkt_conn_rly), PS4LINK_CONN_RLY)) {
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4link_file: ps4LinkRequestConnect: did not receive CONN_RLY\n");
-		return -1;
-	}
-
-	connrly = (ps4link_pkt_conn_rly *)recv_packet;
-    
-	debugNetPrintf(DEBUG,"[PS4LINK] file conn reply received (ret %d)\n", sceNetNtohl(connrly->retval));
-
-	return sceNetNtohl(connrly->retval);	
-	
-	
-}*/
 int ps4LinkRequestsIsConnected()
 {
  	if(ps4link_requests_connected)
@@ -191,6 +155,43 @@ int ps4link_accept_pkt(int sock, char *buf, int len, int pkt_type)
 
 	return 1;
 }
+int ps4LinkConnect()
+{
+	ps4link_pkt_conn_req *connreq;
+	ps4link_pkt_conn_rly *connrly;
+
+	if (ps4LinkGetValue(FILEIO_SOCK) < 0) {
+		debugNetPrintf(DEBUG,"[PS4LINK] ps4link_fileio_sock is not active\n");
+		
+		return -1;
+	}
+
+	debugNetPrintf(DEBUG,"[PS4LINK] conn req\n");
+
+	connreq = (ps4link_pkt_conn_req *)&send_packet[0];
+
+	// Build packet
+	connreq->cmd = sceNetHtonl(PS4LINK_CONN_CMD);
+	connreq->len = sceNetHtons((unsigned short)sizeof(ps4link_pkt_conn_req));
+
+	if (ps4link_send(ps4LinkGetValue(FILEIO_SOCK),connreq, sizeof(ps4link_pkt_conn_req), MSG_DONTWAIT) < 0) {
+		return -1;
+	}
+
+	if (!ps4link_accept_pkt(ps4LinkGetValue(FILEIO_SOCK), recv_packet, sizeof(ps4link_pkt_conn_rly), PS4LINK_CONN_RLY)) {
+		debugNetPrintf(DEBUG,"[PS4LINK] ps4link_file: ps4LinkRequestConnect: did not receive CONN_RLY\n");
+		return -1;
+	}
+
+	connrly = (ps4link_pkt_conn_rly *)recv_packet;
+    
+	debugNetPrintf(DEBUG,"[PS4LINK] file conn reply received (ret %d)\n", sceNetNtohl(connrly->retval));
+
+	return sceNetNtohl(connrly->retval);	
+	
+	
+}
+
 int ps4LinkOpen(const char *file, int flags, int mode)
 {
 	ps4link_pkt_open_req *openreq;
@@ -598,18 +599,19 @@ int ps4LinkDopen(const char *dirname)
 
 	return sceNetNtohl(openrly->retval);
 }
-int ps4LinkDread(int fd, struct dirent *dir)
+int ps4LinkDread(int fd, OrbisDirEntry *dir)
 {
 	ps4link_pkt_dread_req *dirreq;
 	ps4link_pkt_dread_rly *dirrly;
-	struct dirent *dirent;
+	OrbisDirEntry *dirent;
 
 	if (ps4LinkGetValue(FILEIO_SOCK) < 0) {
 		return -1;
 	}
 
 	debugNetPrintf(DEBUG,"[PS4LINK] dir read req (%x)\n", fd);
-
+	if(fd>=0)
+	{
 	dirreq = (ps4link_pkt_dread_req *)&send_packet[0];
 
 	// Build packet
@@ -631,12 +633,47 @@ int ps4LinkDread(int fd, struct dirent *dir)
 	debugNetPrintf(DEBUG,"[PS4LINK] dir read reply received (ret %d)\n", sceNetNtohl(dirrly->retval));
 
 	
-	dirent = (struct dirent *) dir;
+	dirent = dir;
 	   
-	strncpy(dirent->d_name,dirrly->name,256);
-	dirent->d_type=dirrly->type;
+	strncpy(dirent->name,dirrly->name,strlen(dirrly->name)+1);
+	//dirent->name[strlen(dirrly->name)+1]='\0';
+	debugNetPrintf(DEBUG,"[PS4LINK]dirrly %s %d\n", dirrly->name,strlen(dirrly->name));
+	debugNetPrintf(DEBUG,"[PS4LINK]dirent %s %d\n", dirent->name,strlen(dirent->name));
+	
+	dirent->type=dirrly->type;
+	dirent->customtype=0;
+	dirent->mode=sceNetNtohl(dirrly->mode);
+	dirent->size=sceNetNtohl(dirrly->size);
+	dirent->namelen=strlen(dirent->name);
+	
+	dirent->ctime.year=sceNetNtohs(dirrly->ctime[6]);
+	dirent->ctime.month=sceNetNtohs(dirrly->ctime[5]);;
+	dirent->ctime.day=sceNetNtohs(dirrly->ctime[4]);;
+	dirent->ctime.hour=sceNetNtohs(dirrly->ctime[3]);;
+	dirent->ctime.minute=sceNetNtohs(dirrly->ctime[2]);;
+	dirent->ctime.second=sceNetNtohs(dirrly->ctime[1]);
+	dirent->ctime.microsecond=0;
+	
+	dirent->atime.year=sceNetNtohs(dirrly->atime[6]);
+	dirent->atime.month=sceNetNtohs(dirrly->atime[5]);;
+	dirent->atime.day=sceNetNtohs(dirrly->atime[4]);;
+	dirent->atime.hour=sceNetNtohs(dirrly->atime[3]);;
+	dirent->atime.minute=sceNetNtohs(dirrly->atime[2]);;
+	dirent->atime.second=sceNetNtohs(dirrly->atime[1]);
+	dirent->atime.microsecond=0;
+	
+	dirent->mtime.year=sceNetNtohs(dirrly->mtime[6]);
+	dirent->mtime.month=sceNetNtohs(dirrly->mtime[5]);;
+	dirent->mtime.day=sceNetNtohs(dirrly->mtime[4]);;
+	dirent->mtime.hour=sceNetNtohs(dirrly->mtime[3]);;
+	dirent->mtime.minute=sceNetNtohs(dirrly->mtime[2]);;
+	dirent->mtime.second=sceNetNtohs(dirrly->mtime[1]);
+	dirent->mtime.microsecond=0;
+	
 
 	return sceNetNtohl(dirrly->retval);
+	}
+	return -1;
 }
 int ps4LinkDclose(int fd)	
 {
@@ -649,7 +686,8 @@ int ps4LinkDclose(int fd)
 	}
 
 	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_file: dir close req (fd: %d)\n", fd);
-
+	if(fd>=0)
+	{
 	closereq = (ps4link_pkt_close_req *)&send_packet[0];
 	closerly = (ps4link_pkt_file_rly *)&recv_packet[0];
 
@@ -669,6 +707,8 @@ int ps4LinkDclose(int fd)
 	debugNetPrintf(DEBUG,"[PS4LINK] dir close reply received (ret %d)\n", sceNetNtohl(closerly->retval));
 
 	return sceNetNtohl(closerly->retval);
+	}
+	return -1;
 }
 void *ps4link_requests_thread(void * args)
 {
@@ -690,6 +730,16 @@ void *ps4link_requests_thread(void * args)
 	serveraddr.sin_port = sceNetHtons(ps4LinkGetValue(REQUESTS_PORT));
 	memset(serveraddr.sin_zero, 0, sizeof(serveraddr.sin_zero));
 
+	/**Enable SCE_NET_SO_REUSEADDR*/
+	/*int value=1;
+	ret = sceNetSetsockopt(configuration->ps4link_requests_sock, 0xffff, 4, &value, sizeof(value));
+	if(ret<0)
+	{
+		debugNetPrintf(DEBUG,"[PS4LINK] ps4link_requests_thread sceNetSetsockopt error: 0x%08X\n", ret);
+		sceNetSocketClose(ps4LinkGetValue(REQUESTS_SOCK));
+		return NULL;
+	}*/
+	
 	/* Bind the server's address to the socket */
 	ret = sceNetBind(ps4LinkGetValue(REQUESTS_SOCK), (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 	if(ret<0)

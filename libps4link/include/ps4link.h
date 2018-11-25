@@ -42,6 +42,29 @@ typedef enum ps4LinkValue
 	LOG_LEVEL=12,
 } ps4LinkValue; 
 
+typedef struct OrbisDataTime
+{
+	unsigned short year;
+	unsigned short month;
+	unsigned short day;
+	unsigned short hour;
+	unsigned short minute;
+	unsigned short second;
+	int microsecond;
+}OrbisDataTime;
+typedef struct OrbisDirEntry
+{
+	int namelen;
+	unsigned char type;			/* entry type */
+	unsigned char customtype;
+	int mode;
+	unsigned int size;			/* file size, in bytes */
+	OrbisDataTime atime;	/* time of last access */
+	OrbisDataTime mtime;	/* time of last data modification */
+	OrbisDataTime ctime;	/* time of last file status change */
+	char name[256];
+}OrbisDirEntry;
+
 
 int ps4LinkOpen(const char *file, int flags, int mode);
 int ps4LinkClose(int fd);
@@ -52,9 +75,9 @@ int ps4LinkRemove(const char *file);
 int ps4LinkMkdir(const char *dirname, int mode);
 int ps4LinkRmdir(const char *dirname);
 int ps4LinkDopen(const char *dirname);
-int ps4LinkDread(int fd, struct dirent *dir);
+int ps4LinkDread(int fd, OrbisDirEntry *dir);
 int ps4LinkDclose(int fd);
-//int ps4LinkConnect();
+int ps4LinkConnect();
 
 
 

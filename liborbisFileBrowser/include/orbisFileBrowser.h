@@ -16,8 +16,8 @@
 #define MAX_MOUNT_POINT_LENGTH 2
 
 // Max entries
-#define MAX_POSITION 16
-#define MAX_ENTRIES 17
+#define MAX_POSITION 27
+#define MAX_ENTRIES 28
 #define MAX_DIR_LEVELS 1024
 
 enum FileTypes {
@@ -42,11 +42,11 @@ enum SortFlags {
 #define NUM_DEVICES (sizeof(devices) / sizeof(char **))
 
 
+
 typedef struct OrbisFileBrowserListEntry {
 	struct OrbisFileBrowserListEntry *next;
 	struct OrbisFileBrowserListEntry *previous;
-	char name[MAX_NAME_LENGTH];
-	int type;
+	struct OrbisDirEntry *dir;
 } OrbisFileBrowserListEntry;
 
 typedef struct OrbisFileBrowserList {
@@ -64,13 +64,14 @@ typedef struct ExtensionType {
 int orbisFileBrowserGetDirLevel();
 int orbisFileBrowserGetBasePos();
 int orbisFileBrowserGetRelPos();
+char * orbisFileBrowserGetListPath();
 int orbisFileBrowserGetListLength();
 void orbisFileBrowserSetListPath(char *path);
 void orbisFileBrowserEntryDown();
 void orbisFileBrowserEntryUp();
 int orbisFileBrowserGetFileType(char *file);
-void orbisFileBrowserDirLevelUp();
-void orbisFileBrowserDirUp();
+void orbisFileBrowserDirLevelUp(char *path);
+void orbisFileBrowserDirLevelDown();
 void orbisFileBrowserListClean();
 int orbisFileBrowserListRefresh();
 OrbisFileBrowserListEntry *orbisFileBrowserListGetNthEntry(int n);

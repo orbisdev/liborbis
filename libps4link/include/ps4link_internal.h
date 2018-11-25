@@ -34,8 +34,8 @@
 #define PS4LINK_MKDIR_RLY    0xbabe01a2
 #define PS4LINK_RMDIR_CMD    0xbabe01b1
 #define PS4LINK_RMDIR_RLY    0xbabe01b2
-//#define PS4LINK_CONN_CMD	 0xbabe01c1
-//#define PS4LINK_CONN_RLY	 0xbabe01c2
+#define PS4LINK_CONN_CMD	 0xbabe01c1
+#define PS4LINK_CONN_RLY	 0xbabe01c2
 
 
 
@@ -55,7 +55,7 @@ typedef struct
     unsigned int retval;
 } __attribute__((packed)) ps4link_pkt_file_rly;
 
-/*typedef struct
+typedef struct
 {
     unsigned int cmd;
     unsigned short len;
@@ -67,7 +67,7 @@ typedef struct
     unsigned short len;
     unsigned int retval;
 } __attribute__((packed)) ps4link_pkt_conn_rly;
-*/
+
 typedef struct
 {
     unsigned int cmd;
@@ -151,7 +151,12 @@ typedef struct
     unsigned short len;
     int retval;
 	unsigned char type;
-    char name[256];
+	int mode;
+	unsigned int size;
+	unsigned short ctime[8];
+	unsigned short atime[8];
+	unsigned short mtime[8];
+	char name[256];
 } __attribute__((packed)) ps4link_pkt_dread_rly;
 
 #define PS4LINK_EXECUSER_CMD 0xbabe0201
@@ -173,9 +178,9 @@ typedef struct
     char argv[PS4LINK_MAX_PATH];
 } __attribute__((packed)) ps4link_pkt_exec_cmd;
 
-
-#define PS4LINK_MAX_WRITE_SEGMENT (1460 - sizeof(ps4link_pkt_write_req))  //1460
-#define PS4LINK_MAX_READ_SEGMENT  (1460 - sizeof(ps4link_pkt_read_rly)) //1460
+//1460 ORIG
+#define PS4LINK_MAX_WRITE_SEGMENT (32768 - sizeof(ps4link_pkt_write_req))  //1460
+#define PS4LINK_MAX_READ_SEGMENT  (32768 - sizeof(ps4link_pkt_read_rly)) //1460
 
 void *ps4link_requests_thread(void *args);
 void *ps4link_commands_thread(void *args);

@@ -47,9 +47,42 @@ int orbisFileBrowserGetListLength()
 {
 	return browserList->length;
 }
+char* orbisFileBrowserGetListPath()
+{
+	return browserList->path;
+}
+void orbisFileBrowserSetListPath1(char *path)
+{
+	int len = strlen(browserList->path);
+	debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath %s len=%d\n",browserList->path,len);
+	
+	if (dirLevel==0) 
+	{
+		strcpy(browserList->path, path);
+	} 
+	else 
+	{
+		//if(dirLevel > 1)
+		//{
+			if(len+strlen(path)<MAX_PATH_LENGTH-2) 
+			{
+				if(browserList->path[len-1]!='/') 
+				{
+					strcat(browserList->path,"/");
+				}
+			}
+		//}
+		strcat(browserList->path, path);
+		debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath concat done %s len=%d\n",browserList->path,strlen(browserList->path));
+		
+	}
+}
+
 void orbisFileBrowserSetListPath(char *path)
 {
 	int len = strlen(browserList->path);
+	debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath1 %s len=%d\n",browserList->path,len);
+	
 	if (dirLevel==0) 
 	{
 		strcpy(browserList->path, path);
@@ -58,7 +91,7 @@ void orbisFileBrowserSetListPath(char *path)
 	{
 		if(dirLevel > 1)
 		{
-			if(len<MAX_PATH_LENGTH-2) 
+			if(len+strlen(path)<MAX_PATH_LENGTH-2) 
 			{
 				if(browserList->path[len-1]!='/') 
 				{
@@ -67,6 +100,8 @@ void orbisFileBrowserSetListPath(char *path)
 			}
 		}
 		strcat(browserList->path, path);
+		debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath concat done %s len=%d\n",browserList->path,strlen(browserList->path));
+		
 	}
 }
 void orbisFileBrowserEntryDown()
@@ -117,7 +152,7 @@ int orbisFileBrowserGetFileType(char *file)
 
 	return FILE_TYPE_UNKNOWN;
 }
-void orbisFileBrowserDirLevelUp() 
+void orbisFileBrowserDirLevelUp(char *path) 
 {
 	basePosList[dirLevel]=basePos;
 	relPosList[dirLevel]=relPos;
@@ -126,8 +161,11 @@ void orbisFileBrowserDirLevelUp()
 	relPosList[dirLevel]=0;
 	basePos=0;
 	relPos=0;
+	orbisFileBrowserSetListPath(path);
+	orbisFileBrowserListRefresh();			
+	
 }
-void orbisFileBrowserDirUp() 
+void orbisFileBrowserDirLevelDown() 
 {
 
 	char *p;
@@ -135,8 +173,12 @@ void orbisFileBrowserDirUp()
 	p=strrchr(browserList->path,'/');
 	if(p) 
 	{
-		p[1]='\0';
+		debugNetPrintf(DEBUG,"before %s %d\n",browserList->path,strlen(browserList->path));
+		p[0]='\0';
+		if(dirLevel>0)
 		dirLevel--;
+		debugNetPrintf(DEBUG,"after %s %d\n",browserList->path,strlen(browserList->path));
+		
 		goto DIR_UP_RETURN;
 	}
 
@@ -146,6 +188,7 @@ void orbisFileBrowserDirUp()
 		if (strlen(browserList->path)-((p+1)-browserList->path)>0) 
 		{
 			p[1]='\0';
+			if(dirLevel>0)
 			dirLevel--;
 			goto DIR_UP_RETURN;
 		}
@@ -153,28 +196,35 @@ void orbisFileBrowserDirUp()
 
 	strcpy(browserList->path, ROOT_PATH);
 	dirLevel=0;
+	
 
 DIR_UP_RETURN:
 	basePos=basePosList[dirLevel];
 	relPos=relPosList[dirLevel];
+	orbisFileBrowserListRefresh();
 }
 
 void orbisFileBrowserListClean()
 {
 	if(browserList)
 	{
-		if(browserList->head)
-		{	OrbisFileBrowserListEntry *entry=browserList->head;
-			while(entry) 
-			{
-				if(entry->next)
-				{
-					OrbisFileBrowserListEntry *next=entry->next;
-					free(entry);
-					entry=next;
-				}
-			}
+		
+		OrbisFileBrowserListEntry *entry = browserList->head;
+
+		while (entry) 
+		{
+		    OrbisFileBrowserListEntry *next = entry->next;
+			debugNetPrintf(DEBUG,"before free %s\n",entry->dir->name);
+			
+			free(entry->dir);
+			debugNetPrintf(DEBUG,"after free dir\n");
+			
+		    free(entry);
+			debugNetPrintf(DEBUG,"after free entry\n");
+			
+		    entry = next;
 		}
+		
 		browserList->head=NULL;
 		browserList->tail=NULL;
 		browserList->length=0;
@@ -185,18 +235,21 @@ int orbisFileBrowserListRefresh()
 {
 	int ret=0,res=0;
 
-	do 
-	{
+	//do 
+	//{
 		orbisFileBrowserListClean();
+		debugNetPrintf(DEBUG,"after orbisFileBrowserListClean\n");
 
 		res=orbisFileBrowserListGetEntries(browserList->path);
 
 		if(res<0) 
 		{
+			debugNetPrintf(DEBUG,"orbisFileBrowserListRefresh error=%d\n",res);
+			
 			ret=res;
-			orbisFileBrowserDirUp();
+			orbisFileBrowserDirLevelDown();
 		}
-	}while(res<0);
+		//}while(res<0);
 
 	// Correct position after deleting the latest entry of the file list
 	while((basePos+relPos)>=browserList->length) 
@@ -231,32 +284,32 @@ int orbisFileBrowserListRefresh()
 OrbisFileBrowserListEntry *orbisFileBrowserListGetNthEntry(int n) 
 {
 	OrbisFileBrowserListEntry *entry; 
-	int i;
-	if(n<browserList->length/2)
+	if(!browserList)
 	{
-		entry=browserList->head;
-		for(i=0;i<n;i++) 
-		{
-			entry=entry->next;
-		}
+		return NULL;
 	}
-	else
+	entry=browserList->head;
+	while(n>0 && entry->next)
 	{
-		entry=browserList->tail;
-		for(i=browserList->length-1;i>n;i--)
-		{
-			entry=entry->previous;
-		}
-		
+		n--;
+		entry=entry->next;
 	}
+
+	if (n != 0)
+		return NULL;
+
 	return entry;
 }
 
 void orbisFileBrowserListAddEntry(OrbisFileBrowserListEntry *entry,int sort) 
 {
+	
+	if(!browserList || !entry)
+	{
+		return;
+	}
 	entry->next=NULL;
 	entry->previous=NULL;
-
 	if(browserList->head==NULL) 
 	{
 		browserList->head=entry;
@@ -264,73 +317,13 @@ void orbisFileBrowserListAddEntry(OrbisFileBrowserListEntry *entry,int sort)
 	} 
 	else 
 	{
-		if(sort!=SORT_NONE) 
-		{
-			int entry_length=strlen(entry->name);
-
-			OrbisFileBrowserListEntry *p=browserList->head;
-			OrbisFileBrowserListEntry *previous=NULL;
-
-			while(p) 
-			{
-				// Sort by type
-				if(entry->type>p->type)
-					break;
-
-				// '..' is always at first
-				if(strcmp(entry->name,"..")==0)
-					break;
-
-				if(strcmp(p->name,"..")!=0) 
-				{
-					// Get the minimum length without /
-					int name_length=strlen(p->name);
-					int len=(((entry_length) < (name_length)) ? (entry_length) : (name_length));
-					if(entry->name[len - 1]=='/' || p->name[len - 1]=='/')
-						len--;
-
-					// Sort by name
-					if(entry->type==p->type) 
-					{
-						int diff=strncasecmp(entry->name,p->name,len);
-						if (diff<0 || (diff==0 && entry_length<name_length)) 
-						{
-							break;
-						}
-					}
-				}
-
-				previous=p;
-				p=p->next;
-			}
-
-			if(previous==NULL) 
-			{ // Order: entry (new head) -> p (old head)
-				entry->next=p;
-				p->previous=entry;
-				browserList->head=entry;
-			} 
-			else if(previous->next == NULL) 
-			{ // Order: p (old tail) -> entry (new tail)
-				OrbisFileBrowserListEntry *tail=browserList->tail;
-				tail->next=entry;
-				entry->previous=tail;
-				browserList->tail=entry;
-			} 
-			else 
-			{ // Order: previous -> entry -> p
-				previous->next=entry;
-				entry->previous=previous; 
-				entry->next=p;
-				p->previous=entry;
-			}
-		} 
-		else 
-		{
-			OrbisFileBrowserListEntry *tail=browserList->tail;
-			tail->next=entry;
-			browserList->tail=entry;
-		}
+		OrbisFileBrowserListEntry *tail=browserList->tail;
+		tail->next=entry;
+		entry->previous=tail;
+		browserList->tail=entry;
+		
+		
+		
 	}
 
 	browserList->length++;
@@ -338,12 +331,69 @@ void orbisFileBrowserListAddEntry(OrbisFileBrowserListEntry *entry,int sort)
 int orbisFileBrowserGetDirectoryEntries(char *path) 
 {
 	int type=0;
+	int res=0;
 	int dfd=ps4LinkDopen(path);
 	if (dfd<0)
 		return dfd;
 
-	OrbisFileBrowserListEntry *entry=malloc(sizeof(OrbisFileBrowserListEntry));
-	strcpy(entry->name,DIR_UP);
+	//
+	
+		do
+		{
+			OrbisDirEntry *dir;
+			//memset(&ent,0,sizeof(OrbisFileEntry));
+			dir=malloc(sizeof(OrbisDirEntry));
+			res=ps4LinkDread(dfd,dir);
+			if(res>0)
+			{
+				OrbisFileBrowserListEntry *entry=malloc(sizeof(OrbisFileBrowserListEntry));
+				entry->dir=dir;
+				if(dir->type!=DT_DIR)
+				{
+					type=orbisFileBrowserGetFileType(entry->dir->name);
+					if(type==FILE_TYPE_ROM)
+					{
+						if(strncmp(path,"host0:system",12)==0)
+						{
+							entry->dir->customtype=FILE_TYPE_SYSTEM_ROM;
+						}
+						else
+						{
+							entry->dir->customtype=FILE_TYPE_GAME_ROM;
+						
+						}
+					}
+					if(type==FILE_TYPE_DSK)
+					{
+						entry->dir->customtype=FILE_TYPE_GAME_DSK;
+					}
+					if(type==FILE_TYPE_CAS)
+					{
+						entry->dir->customtype=FILE_TYPE_CAS;
+					}
+					if(type==FILE_TYPE_UNKNOWN)
+					{
+						entry->dir->customtype=FILE_TYPE_UNKNOWN;
+					}
+				}
+				else
+				{
+					entry->dir->customtype=FILE_TYPE_FOLDER;
+				}
+				orbisFileBrowserListAddEntry(entry,SORT_BY_NAME_AND_FOLDER);
+				
+			}
+				
+		}
+		while(res>0);
+		//res=0;
+		
+	
+		ps4LinkDclose(dfd);
+		return res;
+	
+	
+	/*strcpy(entry->name,DIR_UP);
 	entry->type=FILE_TYPE_FOLDER;
 	orbisFileBrowserListAddEntry(entry,SORT_BY_NAME_AND_FOLDER);
 
@@ -400,7 +450,7 @@ int orbisFileBrowserGetDirectoryEntries(char *path)
 
 	ps4LinkDclose(dfd);
 
-	return 0;
+	return 0;*/
 }
 
 int orbisFileBrowserGetDevices()
@@ -412,8 +462,8 @@ int orbisFileBrowserGetDevices()
 		{
 			
 				OrbisFileBrowserListEntry *entry=malloc(sizeof(OrbisFileBrowserListEntry));
-				strcpy(entry->name,devices[i]);
-				entry->type=FILE_TYPE_FOLDER;
+				strcpy(entry->dir->name,devices[i]);
+				entry->dir->customtype=FILE_TYPE_FOLDER;
 				orbisFileBrowserListAddEntry(entry,SORT_BY_NAME_AND_FOLDER);
 			
 		}
@@ -443,12 +493,14 @@ int orbisFileBrowserInit(char *path)
 				orbisFileBrowserListClean();
 				if(path==NULL)
 				{
-					strcpy(browserList->path, ROOT_PATH);	
+					strcpy(browserList->path, ROOT_PATH);
+					dirLevel=0;	
 				}
 				else
 				{
-					strcpy(browserList->path, path);	
-					
+					strcpy(browserList->path, path);
+					dirLevel=1;
+					//orbisFileBrowserDirLevelUp();		
 				}
 				orbisFileBrowserListGetEntries(browserList->path);
 				
@@ -463,7 +515,7 @@ int orbisFileBrowserInit(char *path)
 	{
 		orbisFileBrowserListClean();
 	}
-	strcpy(browserList->path, ROOT_PATH);	
+	//strcpy(browserList->path, ROOT_PATH);	
 	return orbisFileBrowserInitialized;
 }
 void orbisFileBrowserFinish() 

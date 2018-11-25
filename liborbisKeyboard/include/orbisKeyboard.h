@@ -47,6 +47,7 @@ typedef struct
 typedef struct
 {
 	uint16_t keycode;
+	uint16_t unknown;
 	uint32_t status;//1.76 
 	uint32_t unknown1;
 	SceUserServiceUserId userId;

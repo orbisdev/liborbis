@@ -344,6 +344,8 @@ uint8_t orbisKeyboardGetMsxKey()
 {
 	if(orbisKeyboardConf!=NULL)
 	{
+    	//debugNetPrintf(DEBUG,"liborbiskeyboard orbisKeyboardGetMsxKey key:0x%08x status:%d \n",orbisKeyboardConf->key,orbisKeyboardConf->key_status);
+		
 		return orbisKeyboardConf->key;
 		
 	}
@@ -577,6 +579,8 @@ static void orbisKeyboardEventUpdate(void *arg,const OrbisKeyboardEvent *e)
 		{
 		debugNetPrintf(DEBUG, "liborbiskeyboard key down :%02X\n",orbisKeyboardNames[index][e->param.keycode.keycode]);
     	orbisKeyboardConf->key=orbisKeyboardNames[index][e->param.keycode.keycode];
+		debugNetPrintf(DEBUG, "liborbiskeyboard key down :%02X\n",orbisKeyboardConf->key);
+		
 		orbisKeyboardConf->key_status=1;
 		}
 		
@@ -638,7 +642,9 @@ void orbisKeyboardUpdate()
 	{
 		//if(orbisKeyboardConf->orbiskeyboard_initialized==1 && orbisKeyboardConf->status==0)
 		//{
+			//debugNetPrintf(DEBUG,"orbisKeyboardUpdate 0x%8x \n",sceImeUpdate(orbisKeyboardEventUpdate));
 			sceImeUpdate(orbisKeyboardEventUpdate);
+			
 			//}
 	}
 }
@@ -737,7 +743,7 @@ int orbisKeyboardInitWithConf(OrbisKeyboardConfig *conf)
 	{
 		debugNetPrintf(3,"liborbisKeyboard already initialized using configuration external\n");
 		debugNetPrintf(3,"orbiskeyboard_initialized=%d\n",orbisKeyboardConf->orbiskeyboard_initialized);
-		debugNetPrintf(3,"ready to have a lot of fun...\n");
+		debugNetPrintf(3,"ready to have a lot of fun :P ...\n");
 		return orbisKeyboardConf->orbiskeyboard_initialized;
 	}
 	else
