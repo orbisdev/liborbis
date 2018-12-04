@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/fcntl.h>
+#include <unistd.h>
 #include <ps4link.h>
 #include <png.h>
 #include "orbis2d.h"
@@ -196,7 +197,43 @@ Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *path)
 
 	Orbis2dTexture *texture=orbis2dLoadPngFromBuffer(buf);  //create png from buf
 
-	return texture;
+// uses standard open/lseek/read/close to access sandbox'ed content
+Orbis2dTexture *orbis2dLoadPngFromSandBox(const char *path)
+{
+	int fd;             // descriptor to manage file from /mnt/sanbox/...
+	int filesize;       // variable to control file size
+	uint8_t *buf=NULL;  // buffer for read from file
+
+	fd = open(path,O_RDONLY);  // we open file in read only
+
+	if(fd<0)  //If we can't open file, print the error and return
+	{
+		debugNetPrintf(DEBUG,"open returned error %d\n",fd);
+		return NULL;
+	}
+	filesize=lseek(fd,0,SEEK_END);  // Seek to end to get file size
+	if(filesize<0)                  // If we get an error print it and return
+	{
+		debugNetPrintf(DEBUG,"lseek returned error %d\n",fd);
+		close(fd);
+		return NULL;
+	}
+	lseek(fd,0,SEEK_SET);  //Seek back to start
+
+	buf=malloc(filesize);  //Reserve memory for read buffer
+	if(!buf)
+		return NULL;
+
+	int numread=read(fd,buf,filesize);  //Read filsesize bytes to buf
+	close(fd);
+
+	if(numread!=filesize)  //if we don't get filesize bytes we are in trouble
+	{
+		debugNetPrintf(DEBUG,"read returned error %d\n",numread);
+		return NULL;
+	}
+
+	return orbis2dLoadPngFromBuffer(buf);  //create png from buf
 }
 
 Orbis2dTexture *orbis2dLoadPngFromBuffer(const void *buffer)
