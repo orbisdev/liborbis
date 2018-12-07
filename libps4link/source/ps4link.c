@@ -17,7 +17,7 @@
 #include <net.h>
 #include <sys/socket.h>
 #include <debugnet.h>
-
+#include <sys/fcntl.h>
 
 
 #include "ps4link_internal.h"
@@ -316,4 +316,70 @@ void ps4LinkFinish()
 		}
 		debugNetFinish();
 	}
+}
+
+/*
+  uses standard open/lseek/read/close to access sandbox'ed content,
+  if patch starts with host0:/... , file will be readed via ps4link
+*/
+uint8_t *DataFromFile(const char *path, int additional_size)
+{
+    int fd;             // descriptor to manage file from /mnt/sanbox/...
+    int filesize = 0;   // variable to control file size
+    int numread  = 0;
+    int use_host = 0;
+    uint8_t *buf = NULL;  // buffer for read from file
+
+
+    if(!memcmp(path, "host0:", 6)) use_host=1;  // set flag
+
+    debugNetPrintf(INFO,"DataFromFile(%s), use_host:%d, add:%d\n",path,use_host,additional_size);
+
+    // we open file in read only
+    if(use_host) fd=ps4LinkOpen(path,O_RDONLY,0);
+    else         fd=open(path,O_RDONLY);
+
+    if(fd<0)  //If we can't open file, print the error and return
+    {
+        debugNetPrintf(DEBUG,"open file returned error %d\n",fd);
+        return NULL;
+    }
+
+    // Seek to end to get file size
+    if(use_host) filesize=ps4LinkLseek(fd,0,SEEK_END);
+    else         filesize=lseek(fd,0,SEEK_END);
+
+    if(filesize<0) // If we get an error print it and return
+    {
+        debugNetPrintf(DEBUG,"lseek returned error %d\n",fd);
+        if(buf) free(buf), buf = NULL;
+        goto end;
+    }
+
+    buf=malloc(filesize + additional_size);  // Reserve  memory for read buffer
+    if(!buf)
+        return NULL;
+
+    memset(buf, 0, filesize + additional_size);  // wipe
+
+    // Seek back to start and read filsesize bytes to buf
+    if(use_host) {
+        ps4LinkLseek(fd,0,SEEK_SET);
+        numread=ps4LinkRead(fd,buf,filesize);
+    } else {
+        lseek(fd,0,SEEK_SET);
+        numread=read(fd,buf,filesize);
+    }
+
+end:
+    if(use_host) ps4LinkClose(fd);
+    else         close(fd);
+
+    if(numread!=filesize)  // if we don't get filesize bytes we are in trouble
+    {
+        debugNetPrintf(DEBUG,"read returned error %d\n",numread);
+        if(buf) free(buf), buf = NULL;
+    }
+
+    return buf;  // remember to free()
 }
