@@ -203,6 +203,172 @@ void Mod_FreeTune()
     free(m_TrackDat);
 }
 
+int Mod_Load_From_SandBox(char *filename)
+{
+    int i, numpatterns, row, note;
+    int index = 0;
+    int numsamples;
+    char modname[21];
+    int fd;
+    if ((fd = open(filename, O_RDONLY, 0)) > 0) {
+    //  opened file, so get size now
+    size = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+    data = (unsigned char *) malloc(size + 8);
+    memset(data, 0, size + 8);
+    if (data != 0) {    // Read file in
+        read(fd, data, size);
+    } else {
+        printf("Error allocing\n");
+        close(fd);
+        return 0;
+    }
+    // Close file
+    close(fd);
+    } else {            //if we couldn't open the file
+    return 0;
+    }
+ 
+    //BPM_RATE = 130;
+    BPM_RATE = 125; //PAL
+    //  Set default settings
+    numsamples = 32;
+    m_nNumTracks = 4;
+    //  Check for diff types of mod
+    if ((data[1080] == 'M') && (data[1081] == '.') && (data[1082] == 'K') && (data[1083] == '.'));
+    else if ((data[1080] == 'F') && (data[1081] == 'L') && (data[1082] == 'T') && (data[1083] == '4'));
+    else if ((data[1080] == 'F') && (data[1081] == 'L') && (data[1082] == 'T') && (data[1083] == '8'))
+    m_nNumTracks = 8;
+    else if ((data[1080] == '6') && (data[1081] == 'C') && (data[1082] == 'H') && (data[1083] == 'N'))
+    m_nNumTracks = 6;
+    else if ((data[1080] == '8') && (data[1081] == 'C') && (data[1082] == 'H') && (data[1083] == 'N'))
+    m_nNumTracks = 8;
+    else
+    numsamples = 16;
+ 
+    //  Setup the trackdata structure
+    m_TrackDat_num = m_nNumTracks;
+    m_TrackDat = (TrackData *) malloc(m_TrackDat_num * sizeof(TrackData));
+ 
+    // Get the name
+    memcpy(modname, &data[index], 20);
+    modname[20] = 0;
+    strcpy(m_szName, modname);
+    index += 20;
+ 
+    // Read in all the instrument headers - mod files have 31, sample #0 is ignored
+    m_Samples_num = numsamples;
+    m_Samples = (Sample *) malloc(m_Samples_num * sizeof(Sample));
+    for (i = 1; i < numsamples; i++) {
+    // Read the sample name
+    char samplename[23];
+    memcpy(samplename, &data[index], 22);
+    samplename[22] = 0;
+    strcpy(m_Samples[i].szName, samplename);
+    index += 22;
+ 
+    // Read remaining info about sample
+    m_Samples[i].nLength = ReadModWord(data, index);
+    index += 2;
+    m_Samples[i].nFineTune = (int) (unsigned char) *(data + index);
+    index++;
+    if (m_Samples[i].nFineTune > 7)
+        m_Samples[i].nFineTune -= 16;
+    m_Samples[i].nVolume = (int) (unsigned char) *(data + index);
+    index++;
+    m_Samples[i].nLoopStart = ReadModWord(data, index);
+    index += 2;
+    m_Samples[i].nLoopLength = ReadModWord(data, index);
+    index += 2;
+    m_Samples[i].nLoopEnd = m_Samples[i].nLoopStart + m_Samples[i].nLoopLength;
+ 
+    // Fix loop end in case it goes too far
+    if (m_Samples[i].nLoopEnd > m_Samples[i].nLength)
+        m_Samples[i].nLoopEnd = m_Samples[i].nLength;
+    }
+ 
+    // Read in song data
+    m_nSongLength = (int) (unsigned char) *(data + index);
+    index++;
+    index++;            // Skip over this byte, it's no longer used
+ 
+    numpatterns = 0;
+    m_nOrders_num = 128;
+    m_nOrders = (int *) malloc(m_nOrders_num * sizeof(int));
+    for (i = 0; i < 128; i++) {
+    m_nOrders[i] = (int) (unsigned char) *(data + index);
+    index++;
+    if (m_nOrders[i] > numpatterns)
+        numpatterns = m_nOrders[i];
+    }
+    numpatterns++;
+    index += 4;         // skip over the identifier
+ 
+    // Load in the pattern data
+    m_Patterns_num = numpatterns;
+    m_Patterns = (Pattern *) malloc(m_Patterns_num * sizeof(Pattern));
+    for (i = 0; i < numpatterns; i++) {
+    // Set the number of rows for this pattern, for mods it's always 64
+    m_Patterns[i].numrows = 64;
+    m_Patterns[i].row = (RowData *) malloc(m_Patterns[i].numrows * sizeof(RowData));
+ 
+    // Loop through each row
+    for (row = 0; row < 64; row++) {
+        // Set the number of notes for this pattern
+        m_Patterns[i].row[row].numnotes = m_nNumTracks;
+        m_Patterns[i].row[row].note = (NoteData *) malloc(m_Patterns[i].row[row].numnotes * sizeof(NoteData));
+ 
+        // Loop through each note
+        for (note = 0; note < m_nNumTracks; note++) {
+        int b0, b1, b2, b3, period;
+        // Get the 4 bytes for this note
+        b0 = (int) (unsigned char) *(data + index);
+        b1 = (int) (unsigned char) *(data + index + 1);
+        b2 = (int) (unsigned char) *(data + index + 2);
+        b3 = (int) (unsigned char) *(data + index + 3);
+        index += 4;
+ 
+        // Parse them
+        period = ((b0 & 0x0F) << 8) | b1;
+        if (period)
+            //m_Patterns[i].row[row].note[note].period_index = (int)((log(856) - log(period)) / log(1.007246412224) + 8);// ??
+            m_Patterns[i].row[row].note[note].period_index = Period_Log_Lookup[period];
+        else
+            m_Patterns[i].row[row].note[note].period_index = -1;
+ 
+        m_Patterns[i].row[row].note[note].sample_num = (b0 & 0xF0) | (b2 >> 4);
+        m_Patterns[i].row[row].note[note].effect = b2 & 0x0F;
+        m_Patterns[i].row[row].note[note].effect_parms = b3;
+        }
+    }
+    }
+ 
+    // Load in the sample data
+    for (i = 1; i < numsamples; i++) {
+    int length;
+    m_Samples[i].data_length = m_Samples[i].nLength;
+    m_Samples[i].data = (char *) malloc(m_Samples[i].data_length + 1);
+ 
+    if (m_Samples[i].nLength) {
+        memcpy(&m_Samples[i].data[0], &data[index], m_Samples[i].nLength);
+    }
+    index += m_Samples[i].nLength;
+ 
+    // Duplicate the last byte, we'll need an extra one in order to safely anti-alias
+    length = m_Samples[i].nLength;
+    if (length > 0) {
+        m_Samples[i].data[length] = m_Samples[i].data[length - 1];
+ 
+        if (m_Samples[i].nLoopLength > 2)
+        m_Samples[i].data[m_Samples[i].nLoopEnd] = m_Samples[i].data[m_Samples[i].nLoopStart];
+    }
+    }
+    //  Set volume to full ready to play
+    SetMasterVolume(64);
+    m_bPlaying = FALSE;
+    return 1;
+}
+
 void Mod_End()
 {
     Mod_Stop();
