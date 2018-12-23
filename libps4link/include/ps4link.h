@@ -4,6 +4,9 @@
 #include <dirent.h>
 #include <debugnet.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct ps4LinkConfiguration
 {
@@ -91,3 +94,7 @@ int ps4LinkInitWithConf(ps4LinkConfiguration *conf);
 int ps4LinkCreateConf();
 int ps4LinkInit(char *serverIp, int requestPort,int debugPort, int commandPort, int level);
 void ps4LinkFinish();
+
+#ifdef __cplusplus
+}
+#endif

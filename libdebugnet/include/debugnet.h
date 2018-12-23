@@ -6,6 +6,9 @@
 #ifndef _DEBUGNET_H_
 #define _DEBUGNET_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define NONE 0
 #define INFO 1
@@ -29,5 +32,9 @@ void debugNetPrintf(int level, char* format, ...);
 void debugNetSetLogLevel(int level);
 int debugNetCreateConf();
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

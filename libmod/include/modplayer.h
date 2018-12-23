@@ -6,6 +6,10 @@
 #ifndef _MODPLAYER_GENERAL_H
 #define _MODPLAYER_GENERAL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 static int modplayint_channel;
 typedef void (*fd_initFunc) (int);
 typedef int (*fd_loadFunc) (char *);
@@ -32,9 +36,7 @@ typedef struct {
 } codecStubs;
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 //  Function prototypes for public functions
     void MODsetStubs(codecStubs * stubs);

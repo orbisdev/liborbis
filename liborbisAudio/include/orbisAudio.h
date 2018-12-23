@@ -8,7 +8,9 @@
 #include <types/kernel.h>
 
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 #define ORBISAUDIO_ALIGN_SAMPLE(x,y) ((((x)+((y)-1))/(y))*(y))
@@ -84,3 +86,7 @@ int orbisAudioStop();
 int orbisAudioSetCallback(unsigned int channel,OrbisAudioCallback callback,void *userdata);
 int orbisAudioInitWithConf(OrbisAudioConfig *conf);
 OrbisAudioConfig *orbisAudioGetConf();
+
+#ifdef __cplusplus
+}
+#endif

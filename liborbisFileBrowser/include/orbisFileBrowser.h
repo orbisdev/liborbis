@@ -6,6 +6,10 @@
 #ifndef _ORBISFILEBROWSER_H_
 #define _ORBISFILEBROWSER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 #define ROOT_PATH "root"
 #define DIR_UP ".."
 #define DIR_ACT "."
@@ -83,7 +87,9 @@ int orbisFileBrowserInit(char *path);
 void orbisFileBrowserFinish();
 
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

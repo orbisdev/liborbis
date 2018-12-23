@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include <types/kernel.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ORBIS_IME_MODULE 0x0095
 
 typedef enum OrbisKeyboardEventId{
@@ -117,4 +121,6 @@ int sceImeUpdate(OrbisKeyboardEventHandler handler);
 int sceImeKeyboardOpen(SceUserServiceUserId userId,const OrbisKeyboardParam *param);
 int sceImeKeyboardClose(SceUserServiceUserId userId);
 
-
+#ifdef __cplusplus
+}
+#endif

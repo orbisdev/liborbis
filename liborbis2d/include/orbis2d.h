@@ -8,6 +8,9 @@
 #include <types/kernel.h>
 #include <types/videoout.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ORBIS2D_DISPLAY_BUFFER_NUM 2 
 #define ORBIS2D_FLIP_RATE 0 
@@ -110,3 +113,7 @@ void orbis2dDrawTexture(Orbis2dTexture *texture,unsigned int x, unsigned int y);
 uint32_t orbis2dGetBgColor();
 void orbis2dSetBgColor(uint32_t color);
 int32_t orbis2dGetStatus();
+
+#ifdef __cplusplus
+}
+#endif

@@ -7,6 +7,10 @@
 	2015, masterzorag@gmail.com
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 #define LOWER_ASCII_CODE 32
 #define UPPER_ASCII_CODE 126
 #define FONT_W 16
@@ -486,4 +490,9 @@ static char xbmFont[95][(FONT_W * FONT_H) / BITS_IN_BYTE] = {
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	}
 };
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //__XBM_FONT_H__

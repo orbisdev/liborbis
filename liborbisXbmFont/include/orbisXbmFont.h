@@ -10,7 +10,10 @@
 /* generate with genXBMfonts, https://github.com/masterzorag/xbm_tools */
 #include "xbm_font.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 // for text alignment, sorting matters!
 #define LEFT       0  // useless
 #define RIGHT      1
@@ -48,3 +51,7 @@ uint16_t get_aligned_x(const char *str, const uint8_t alignment);
 * const char *str = string to print
 ***********************************************************************/
 int32_t print_text(int32_t x, int32_t y, const char *str);
+
+#ifdef __cplusplus
+}
+#endif

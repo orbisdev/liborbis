@@ -10,7 +10,9 @@
 #include <types/userservice.h>
 #include <types/pad.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define	ORBISPAD_L3		0x00000002
 #define	ORBISPAD_R3		0x00000004
@@ -58,3 +60,7 @@ unsigned int orbisPadGetCurrentButtonsReleased();
 void orbisPadSetCurrentButtonsPressed(unsigned int buttons);
 void orbisPadSetCurrentButtonsReleased(unsigned int buttons);
 int orbisPadUpdate();
+
+#ifdef __cplusplus
+}
+#endif
