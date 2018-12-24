@@ -3,11 +3,13 @@
  * Copyright (C) 2015,2016,2017,2018 Antonio Jose Ramos Marquez (aka bigboss) @psxdev on twitter
  * Repository https://github.com/orbisdev/liborbis
  */
+#include <stdio.h>
 #include <kernel.h>
 #include <ps4link.h>
 #include <debugnet.h>
 #include <sys/fcntl.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define HOST0 "host0:"
 #define ORBISFILE_MAX_OPEN_DESCRIPTORS 10
@@ -152,6 +154,41 @@ int orbisLseek(int fd, int offset, int whence)
 		return ret;
 	}
 	return sceKernelLseek(fd,offset,whence);
+}
+char * orbisFileGetFileContent(const char *filename)
+{
+    int pFile=orbisOpen(filename,O_RDONLY,0);
+
+    if(pFile<=0)
+    {
+        debugNetPrintf(DEBUG,"[ORBISGL] Failed to read file %s\n", filename);
+        return 0;
+    }
+
+    // obtain file size:
+    int32_t fileSize=orbisLseek(pFile,0,SEEK_END);
+	orbisLseek(pFile,0,SEEK_SET);  // Seek back to start
+	if(fileSize<0)
+	{
+        debugNetPrintf(DEBUG,"[ORBISGL] Failed to read size of file %s\n", filename);
+        orbisClose(pFile);
+		return NULL;
+	}
+	
+    char* pText=malloc(sizeof(char)*fileSize+1);
+
+    if(orbisRead(pFile,pText,fileSize)!=fileSize)
+    {
+        debugNetPrintf(DEBUG,"[ORBISGL] Failed to read content of file %s\n", filename);
+        orbisClose(pFile);
+        free(pText);
+        return 0;
+    }
+	orbisClose(pFile);
+    // add null terminator to string
+    pText[fileSize] = 0;
+
+    return pText;
 }
 void orbisFileFinish()
 {

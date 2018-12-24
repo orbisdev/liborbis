@@ -15,6 +15,7 @@ int orbisClose(int fd);
 int orbisRead(int fd, void *data, size_t size);
 int orbisWrite(int fd, const void *data, size_t size);
 int orbisLseek(int fd, int offset, int whence);
+char * orbisFileGetFileContent(const char *file);
 int orbisFileInit();
 void orbisFileFinish();
 	
