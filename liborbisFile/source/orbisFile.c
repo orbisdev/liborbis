@@ -83,7 +83,7 @@ int orbisOpen(const char *file, int flags, int mode)
 }
 int orbisClose(int fd)
 {
-	int ret;
+	int ret=0;
 	int slot=-1;
 	if(!fd)
 	{
@@ -92,9 +92,11 @@ int orbisClose(int fd)
 	slot=orbisCheckSlotByFd(fd);
 	if(slot>=0)
 	{
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisClose slot=%d fd=%d\n",slot,ret);
 		
 		ret=ps4LinkClose(fd);
 		orbisFileRemoteOpenDescriptors[slot]=-1;
+		
 		return ret;
 	}
 	return sceKernelClose(fd);
@@ -115,6 +117,8 @@ int orbisRead(int fd, void *data, size_t size)
 	if(slot>=0)
 	{	
 		ret=ps4LinkRead(fd,data,size);
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisRead slot=%d fd=%d byteread=%d\n",slot,fd,ret);
+		
 		return ret;
 	}
 	return sceKernelRead(fd,data,size);
@@ -135,6 +139,8 @@ int orbisWrite(int fd, const void *data, size_t size)
 	if(slot>=0)
 	{
 		ret=ps4LinkWrite(fd,data,size);
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisWrite slot=%d fd=%d bytewrite=%d\n",slot,fd,ret);
+		
 		return ret;
 	}
 	return sceKernelWrite(fd,data,size);
@@ -151,9 +157,114 @@ int orbisLseek(int fd, int offset, int whence)
 	if(slot>=0)
 	{
 		ret=ps4LinkLseek(fd,offset,whence);
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisLseek slot=%d fd=%d ret=%d\n",slot,fd,ret);
+		
 		return ret;
 	}
 	return sceKernelLseek(fd,offset,whence);
+}
+int orbisDopen(const char *path)
+{
+	int ret;
+	int slot;
+	if(!path)
+	{
+		return 0x80020016;
+	}
+	if (strncmp(path,HOST0,sizeof(HOST0)-1)==0) 
+	{
+		
+		slot=orbisCheckFreeRemoteDescriptor();
+		if(slot>=0)
+		{
+			ret=ps4LinkDopen(path);
+			if(ret>0)
+			{
+				orbisFileRemoteOpenDescriptors[slot]=ret;
+			}
+			debugNetPrintf(DEBUG,"[ORBISFILE] orbisDopen slot=%d dfd=%d\n",slot,ret);
+			return ret;
+		}
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisOpen no free slot available\n");
+		return 0x80020016;
+	}
+	else
+	{
+		return open(path, O_RDONLY, 0);
+	}
+	
+}
+int orbisDclose(int dfd)
+{
+	int ret=0;
+	int slot=-1;
+	if(!dfd)
+	{
+		return 0x80020009;
+	}
+	slot=orbisCheckSlotByFd(dfd);
+	if(slot>=0)
+	{
+		
+		ret=ps4LinkDclose(dfd);
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisClose slot=%d dfd=%d \n",slot,dfd);
+		orbisFileRemoteOpenDescriptors[slot]=-1;
+		return ret;
+	}
+	return sceKernelClose(dfd);
+}
+int orbisDread(int dfd, struct dirent *entry)
+{
+	int ret;
+	int slot=-1;
+	if(!dfd)
+	{
+		return 0x80020009;
+	}
+	if(!entry)
+	{
+		return 0x8002000e;
+	}
+	slot=orbisCheckSlotByFd(dfd);
+	if(slot>=0)
+	{	
+		OrbisDirEntry *dir;
+		//memset(&ent,0,sizeof(OrbisFileEntry));
+		dir=malloc(sizeof(OrbisDirEntry));
+		ret=ps4LinkDread(dfd,dir);
+		if(ret>0)
+		{
+			//entry->d_fileno=-1;
+			//entry->d_reclen=;
+			entry->d_type=dir->type;
+			entry->d_namlen=dir->namelen;
+			memset(entry->d_name,0,strlen(entry->d_name));
+			strncpy(entry->d_name,dir->name,dir->namelen);
+		}
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisDread slot=%d dfd=%d ret=%d\n",slot,dfd,ret);
+		
+		return ret;
+	}
+	return getdents(dfd,(char *)entry,sizeof(struct dirent));
+	
+}
+int orbisMkdir(const char* path, int mode)
+{
+	int ret=0;
+	if(!path)
+	{
+		return 0x80020016;
+	}
+	if (strncmp(path,HOST0,sizeof(HOST0)-1)==0) 
+	{
+		ret=ps4LinkMkdir(path,mode);
+		debugNetPrintf(DEBUG,"[ORBISFILE] orbisMkdir path=%s ret=%d\n",path,ret);
+		return ret;
+	}
+	else
+	{
+		return sceKernelMkdir(path,mode);
+	}
 }
 char * orbisFileGetFileContent(const char *filename)
 {
