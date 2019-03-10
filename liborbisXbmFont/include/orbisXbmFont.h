@@ -6,6 +6,7 @@
     print_text(x, y, tmp_ln);
 */
 
+#pragma once
 
 /* generate with genXBMfonts, https://github.com/masterzorag/xbm_tools */
 #include "xbm_font.h"
