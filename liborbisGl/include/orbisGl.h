@@ -3,6 +3,8 @@
  * Copyright (C) 2015,2016,2017,2018 Antonio Jose Ramos Marquez (aka bigboss) @psxdev on twitter
  * Repository https://github.com/orbisdev/liborbis
  */
+#pragma once
+
 #include <stdint.h>
 #include <types/kernel.h>
 #include <piglet.h>
