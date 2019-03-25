@@ -404,6 +404,7 @@ texture_font_delete( texture_font_t *self )
     if(buffer) free(buffer), buffer = NULL;
 }
 
+float tl = 0;  // we use from main(), as last composed text length in pixels
 
 // ----------------------------------------------- texture_font_load_glyphs ---
 size_t
@@ -437,8 +438,9 @@ texture_font_load_glyphs( texture_font_t * self,
     }
 
     debugNetPrintf(INFO,"Now load each glyph: %d\n", wcslen(charcodes));
-    //
-    
+
+    tl = 0; // reset text length
+
     /* Load each glyph */
     for( i=0; i<wcslen(charcodes); ++i )
     {
@@ -633,13 +635,16 @@ texture_font_load_glyphs( texture_font_t * self,
         glyph->t1       = (y + glyph->height)/(float)height;
 
         // Discard hinting to get advance
-        
+
         error = FT_Load_Glyph( face, glyph_index, FT_LOAD_RENDER | FT_LOAD_NO_HINTING);
         //debugNetPrintf(DEBUG,"FT_Load_Glyph return:\t%d, face at %p, glyph_index %d\n\n", error, face, glyph_index);
-        
+
         slot = face->glyph;
         glyph->advance_x = slot->advance.x/64.0;
         glyph->advance_y = slot->advance.y/64.0;
+
+        // measure text length for alignement
+        tl += glyph->advance_x;
 
         vector_push_back( self->glyphs, &glyph );
 
@@ -649,7 +654,9 @@ texture_font_load_glyphs( texture_font_t * self,
         }
     }
 
-    
+    // report last line length in px
+    debugNetPrintf(INFO,"tl = %f\n",  tl);
+
     FT_Done_Face( face );
     FT_Done_FreeType( library );
     texture_atlas_upload( self->atlas );
