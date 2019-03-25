@@ -259,7 +259,7 @@ texture_font_generate_kerning( texture_font_t *self )
     FT_UInt glyph_index, prev_index;
     texture_glyph_t *glyph, *prev_glyph;
     FT_Vector kerning;
-    
+
     assert( self );
 
     /* Load font */
@@ -308,7 +308,7 @@ texture_font_new( texture_atlas_t * atlas,
     FT_Library library;
     FT_Face face;
     FT_Size_Metrics metrics;
-    
+
     assert( filename );
     assert( size );
 
@@ -451,7 +451,7 @@ texture_font_load_glyphs( texture_font_t * self,
         memcpy(&ch, &charcodes[i], sizeof(wchar_t));
         l = wcstoul(&ch, &end, 16);
         debugNetPrintf(DEBUG,"%ld '%c' %p %p %.8lx %d %d %p\n", l, ch, &charcodes[i], end, l, sizeof(charcodes), *p, p);*/
-        
+
         FT_Int32 flags = 0;
         int ft_bitmap_width = 0;
         int ft_bitmap_rows = 0;
@@ -565,7 +565,7 @@ texture_font_load_glyphs( texture_font_t * self,
                 FT_Done_FreeType( library );
                 return 0;
             }
-          
+
             if( depth == 1)
             {
                 error = FT_Glyph_To_Bitmap( &ft_glyph, FT_RENDER_MODE_NORMAL, 0, 1);
@@ -730,4 +730,3 @@ texture_font_get_glyph( texture_font_t * self,
     }
     return NULL;
 }
-
