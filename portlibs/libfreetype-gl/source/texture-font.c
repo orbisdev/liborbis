@@ -55,53 +55,14 @@ const struct {
 } FT_Errors[] =
 #include FT_ERRORS_H
 
-// ------------------------------------------------------- buffer_from_host ---
-#include <ps4link.h>
-#include <sys/fcntl.h>  // O_RDONLY
 #include <debugnet.h>
+#include <orbisFile.h>
+// each orbisFileGetFileContent() call will update filesize!
+extern size_t _orbisFile_lastopenFile_size;
+
 
 static FT_Byte *buffer = NULL;  // stores ttf font data
-static size_t   bufsize;
-// can be a default wrapper!
-// returned buffer must be free(): actually in FT_end()
-static uint8_t *buffer_from_host(const char *path, size_t *ret_size)
-{
-	int fd;             // descriptor to manage file from host0
-	int filesize;       // variable to control file size
-	uint8_t *buf=NULL;  // buffer for read from host0 file
-    *ret_size = 0;      // each time we refresh it
 
-	// we open file in read only from host0 ps4sh include the full path with host0:/.......
-	fd=ps4LinkOpen(path,O_RDONLY,0);
-
-	if(fd<0)  //If we can't open file from host0 print  the error and return
-	{
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkOpen returned error %d\n",fd);
-		return NULL;
-	}
-	filesize=ps4LinkLseek(fd,0,SEEK_END);  // Seek to final to get file size
-	if(filesize<0)                         // If we get an error print it and return
-	{
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkSeek returned error %d\n",fd);
-		ps4LinkClose(fd);
-		return NULL;
-	}
-
-	ps4LinkLseek(fd,0,SEEK_SET);  //Seek back to start
-	buf=malloc(filesize);         //Reserve  memory for read buffer
-
-	int numread=ps4LinkRead(fd,buf,filesize);  //Read filsesize bytes to buf
-	ps4LinkClose(fd);  //Close file
-
-	if(numread!=filesize)                      //if we don't get filesize bytes we are in trouble
-	{
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkRead returned error %d\n",numread);
-		return NULL;
-	}
-
-	*ret_size = filesize;
-	return buf;
-}
 
 // ------------------------------------------------- texture_font_load_face ---
 int
@@ -132,21 +93,18 @@ texture_font_load_face( FT_Library * library,
 
     /* Load face */
     // we are freeing buffer at delete_font()
-    if(!buffer)
-    {
-         buffer = buffer_from_host(filename, &bufsize);
-    }
+    if(!buffer) buffer = orbisFileGetFileContent(filename);
 
     if(!buffer) return 0;
 
     // passed, report
-    debugNetPrintf(DEBUG,"data buffer at %p, size %u\n", buffer, bufsize);
+    debugNetPrintf(DEBUG,"data buffer at %p, size %u\n", buffer, _orbisFile_lastopenFile_size);
 
     /* create face object */
     error = FT_New_Memory_Face( *library,
-                                buffer,    /* first byte in memory */
-                                bufsize,   /* size in bytes        */
-                                0,         /* face_index           */
+                                buffer,                        /* first byte in memory */
+                                _orbisFile_lastopenFile_size,  /* size in bytes        */
+                                0,                             /* face_index           */
                                 face );
 
     debugNetPrintf(DEBUG,"FT_New_Memory_Face from buffer at %p return:\t%d, face at:\t%p\n", buffer, error, face);
