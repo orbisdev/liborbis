@@ -266,8 +266,17 @@ int orbisMkdir(const char* path, int mode)
 		return sceKernelMkdir(path,mode);
 	}
 }
+
+/*
+ each orbisFileGetFileContent() call will update this
+ variable letting know filesize on succesful exit.
+*/
+size_t _orbisFile_lastopenFile_size;
+
 char * orbisFileGetFileContent(const char *filename)
 {
+    _orbisFile_lastopenFile_size = -1;  // reset exported variable
+
     int pFile=orbisOpen(filename,O_RDONLY,0);
 
     if(pFile<=0)
@@ -287,6 +296,8 @@ char * orbisFileGetFileContent(const char *filename)
 	}
 	
     char* pText=malloc(sizeof(char)*fileSize+1);
+    if(!pText)
+        return 0;
 
     if(orbisRead(pFile,pText,fileSize)!=fileSize)
     {
@@ -298,6 +309,8 @@ char * orbisFileGetFileContent(const char *filename)
 	orbisClose(pFile);
     // add null terminator to string
     pText[fileSize] = 0;
+
+    _orbisFile_lastopenFile_size = fileSize;  // now we update exported variable
 
     return pText;
 }
