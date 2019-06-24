@@ -6,6 +6,8 @@
 #ifndef _ORBISFILE_H_
 #define _ORBISFILE_H_
 
+#include <dirent.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
