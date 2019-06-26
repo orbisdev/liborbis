@@ -198,7 +198,7 @@ void mp3dec_iterate_buf(const uint8_t *buf, size_t buf_size, MP3D_ITERATE_CB cal
             break;
         buf      += frame_size;
         buf_size -= frame_size;
-        
+
         //int handle = orbisAudioGetHandle(madplayint_channel);
         //sceAudioOutOutput(handle, &snd);// wait for last data
     //sceAudioOutOutput(handle, NULL);
@@ -251,10 +251,13 @@ extern size_t _orbisFile_lastopenFile_size;
 
 static void mp3dec_close_file(mp3dec_map_info_t *map_info)
 {
-    if (map_info->buffer && MAP_FAILED != map_info->buffer)
-        munmap((void *)map_info->buffer, map_info->size);
-    map_info->buffer = 0;
+    /*if (map_info->buffer && MAP_FAILED != map_info->buffer)
+        munmap((void *)map_info->buffer, map_info->size);*/
+    if(map_info->buffer)
+        free((void *)map_info->buffer), map_info->buffer = NULL;
     map_info->size   = 0;
+
+    sleep(1);
 }
 
 static int mp3dec_open_file(const char *file_name, mp3dec_map_info_t *map_info)
@@ -267,7 +270,8 @@ static int mp3dec_open_file(const char *file_name, mp3dec_map_info_t *map_info)
 
     debugNetPrintf(DEBUG,"mp3dec_open_file -> buf_ref 0x%p, size %db\n", map_info->buffer, map_info->size);
 
-    return 0;
+    if(!map_info->buffer) return 0;
+    else                  return 1;
 
     #else
     int file;

@@ -50,16 +50,15 @@ int default_driver;
 
 #include <orbisAudio.h>
 #include <audioout.h>
-static void MadPlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *userdata);
-static int minimp3_playint_channel;
-static int m_bPlaying;  // Set to true when an mp3 is being played
+static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *userdata);
+static int  minimp3_playint_channel;
+static int  m_bPlaying = 0;  // Set to true when an mp3 is being played
+static char selected[256];
 
 // samples are shorts, * 2 channels
 static short      snd[ 1152 *2];
 static short play_buf[(1024 *2) *4];
 
-static unsigned long  play_chunk = 0;
-static size_t size_at = 0;
 
 static int16_t read16le(const void *p)
 {
@@ -133,22 +132,6 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
     /*
     debugNetPrintf(DEBUG,"(fi_cb) %p frame:%p size:%db frame_offset:%d %d\n", d, frame, frame_size, (int)offset, (d->allocated - d->info->samples*sizeof(mp3d_sample_t)));
     */
-    if ((d->allocated - d->info->samples*sizeof(mp3d_sample_t)) < MINIMP3_MAX_SAMPLES_PER_FRAME*sizeof(mp3d_sample_t))
-    {
-        if (!d->allocated)
-            d->allocated = 1024*1024;
-        else
-            d->allocated *= 2;
-        //d->info->buffer = realloc(d->info->buffer, d->allocated);
-        if(!d->info->buffer) {
-            debugNetPrintf(DEBUG,"fail realloc for %p %d\n", d->info->buffer, d->allocated);
-        }
-        debugNetPrintf(DEBUG,"%p allocated %zu\n", d->info->buffer, d->allocated);
-    }
-
-    // count from 512 to 4096, stepping +512 
-    size_at = (4608 - 4096) * (play_chunk %8)/*range 0-7 inclusive*/;
-
     debugNetPrintf(DEBUG,"%p samples %zu, %zu\n",
         &d->info->buffer, d->info->samples, (int)offset);
 
@@ -163,12 +146,9 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
     memcpy(&play_buf[fill], &snd[0], 4608);
     fill += 1152 /*samples*/ *2;
 
-    debugNetPrintf(INFO,"decoded, memcpy(%p, %x <- %p, %zu); %d sizeat:%d fill:%d\n",
+    debugNetPrintf(INFO,"decoded, memcpy(%p, %p, %zu); fill:%d\n",
          &play_buf[fill],
-         play_buf + size_at,
          &snd, 4608,
-         &play_buf[size_at] - &play_buf[0],
-         size_at,
          fill);
 
     if (samples)
@@ -177,26 +157,29 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
     }
     debugNetPrintf(INFO,"fill now: %d, free: %lu\n\n", fill, sizeof(play_buf) - (fill * 2));
 
+    sceKernelUsleep(100000);
+
     return 0;
 }
 #endif
 
 
 
-static const uint8_t *buf2;
+static const uint8_t      *buf2;
 static const uint8_t *orig_buf2;
-static  size_t        buf2_size;
+static       size_t        buf2_size;
+static       size_t   orig_buf2_size;
 static mp3dec_frame_info_t frame_info2;
 
 static unsigned int numframe = 0;
 
 
-static void MadPlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *pdata)    
+static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *pdata)
 {
     int handle = orbisAudioGetHandle(minimp3_playint_channel);
 
     // debugNetPrintf(3,"Inside ModPlayCallback %d\n",length);
-    int count;
+    //int count;
     short *_buf = (short *)_buf2;
 
     if (m_bPlaying == 1)
@@ -238,7 +221,8 @@ static void MadPlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *p
         }
 
         /* write to audio device buffers */
-        for (count = 0; count < length * 2; count++) { *(_buf + count)  = play_buf[count]; }
+      //for (count = 0; count < length * 2; count++) { *(_buf + count)  = play_buf[count]; }
+        memcpy(_buf, &play_buf, length *2 * sizeof(short));
 
         // move to front
         memcpy(&play_buf[0], &play_buf[1024 *2], sizeof(play_buf) - fill *2); // move
@@ -249,32 +233,31 @@ static void MadPlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *p
                                                                      &play_buf[fill] - &play_buf[0]);
         */
         fill -= 1024 *2;
-        play_chunk += 1;
 
-        if(buf2_size <= 0)
-        {
-            m_bPlaying = 0; 
-        }
+        // no more frames to decode
+        if(buf2_size <= 0
+        || fill < 0)
+        { m_bPlaying = 0; }
     }
     else // Not Playing , so clear buffer
     {
-        if(numframe %200 == 0) { debugNetPrintf(DEBUG,"Inside MadPlayCallback not playing m_bPlaying is %d\n",m_bPlaying); }
+        if(numframe %200 == 0) { debugNetPrintf(DEBUG,"Inside minimp3_PlayCallback not playing m_bPlaying is %d\n",m_bPlaying); }
 
-        for (count = 0; count < length * 2; count++) { *(_buf + count)  = 0; }
+      //for (count = 0; count < length * 2; count++) { *(_buf + count)  = 0; }
+        memset(_buf, 0, length *2 * sizeof(short));
     }
     numframe++;
 
     // wait for last data
     sceAudioOutOutput(handle, NULL);
 
-    sceKernelUsleep(10000);
+    sceKernelUsleep(100000);
 }
 
 
 void minimp3_Init(int channel)
 {
     minimp3_playint_channel = channel;
-    m_bPlaying = 0;
 
     /// minimp3
     d.mp3d      = &mp3d;
@@ -302,18 +285,24 @@ int minimp3_Load(char *input_file_name)
     */
 
     // internally uses liborbisFile()!
-    mp3dec_open_file(input_file_name, &map_info);
+    int ret = mp3dec_open_file(input_file_name, &map_info);
+
+    if(ret == 0) return 0;
 
     // address buffer pointer and size for callback
     buf2      = map_info.buffer;
     buf2_size = map_info.size;
 
+    // refresh current mp3
+    strcpy(&selected[0], input_file_name);
+
     /* skip id3v2 */
     size_t id3v2size = mp3dec_skip_id3v2(buf2, buf2_size);
     if (id3v2size > buf2_size) return -1;
-    orig_buf2  = buf2;
-    buf2      += id3v2size;
-    buf2_size -= id3v2size;
+    orig_buf2      = buf2;
+    buf2          += id3v2size;
+    buf2_size     -= id3v2size;
+    orig_buf2_size = buf2_size;
 
 #ifdef __AFL_HAVE_MANUAL_CONTROL
     __AFL_INIT();
@@ -335,19 +324,52 @@ int minimp3_Load(char *input_file_name)
     ao_shutdown();
     */
 
-    return 0;
+    return 1;
 }
 
 int minimp3_Play(void)
 {
-    orbisAudioSetCallback(minimp3_playint_channel, MadPlayCallback,0);
+    orbisAudioSetCallback(minimp3_playint_channel, minimp3_PlayCallback,0);
     m_bPlaying = 1;
     return 1;
 }
 
-void minimp3_End()
+void minimp3_Pause(void)
 {
-    mp3dec_close_file(&map_info);
+    m_bPlaying = 0;
+    //orbisAudioSetCallback(minimp3_playint_channel, 0,0);
+}
 
+void minimp3_End(void)
+{
+    m_bPlaying = 0;
     orbisAudioSetCallback(minimp3_playint_channel, 0,0);
+
+    mp3dec_close_file(&map_info);
+}
+
+void minimp3_Loop(void)
+{
+    m_bPlaying = 0;
+
+    // reset buffer pointer and size for callback
+    buf2      = orig_buf2;
+    buf2_size = orig_buf2_size;
+    fill = 0;
+    m_bPlaying = 1;
+}
+
+void minimp3_Loop2(void)
+{
+    minimp3_End();
+    minimp3_Init(0);
+
+    // extend playlist
+    memset(&selected[0], 0, sizeof(selected));
+    strcpy(&selected[0], "host0:main1.mp3");
+    debugNetPrintf(DEBUG,"selected: %s\n", selected);
+
+    int ret = minimp3_Load(selected);
+    if(ret)
+        minimp3_Play();
 }

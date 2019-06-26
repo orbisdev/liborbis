@@ -257,8 +257,8 @@ int main(int argc, char *argv[])
     initApp();
 
     minimp3_Init(0);
-    minimp3_Load("host0:main.mp3");
-    minimp3_Play();
+    ret =   minimp3_Load("host0:main0.mp3");
+    if(ret) minimp3_Play();
     orbisAudioResume(0);
 
     // define text fading colors
