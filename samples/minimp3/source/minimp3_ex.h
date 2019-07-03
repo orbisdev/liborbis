@@ -248,13 +248,54 @@ int mp3dec_ex_read(mp3dec_ex_t *dec, int16_t *buf, int samples)
 extern size_t _orbisFile_lastopenFile_size;
 
 
+#define CHUNKED_READS  // define here!
+
+
+#ifdef CHUNKED_READS
+#define SIZE       (32768)  // chunk size
+static int pFile;           // fd
+static int num    = 0;      // num of readed chunks, of SIZE bytes
+static int readed = 0;      // total bytes readed, per fd
+
+
+// read fd to map_info->buffer
+static void mp3dec_read_chunk(mp3dec_map_info_t *map_info, int pos)
+{
+    // we already readed whole file
+    if(readed == map_info->size) return;
+
+    int ret = orbisRead(pFile, (void*)map_info->buffer + pos, SIZE);
+    //debugNetPrintf(DEBUG,"orbisRead(%d, %p, %zu): %d\n", ret, map_info->buffer + pos, SIZE, ret);
+    readed += ret;
+
+    if(ret < SIZE)  // if EOF before filling current chunk
+    {
+       // file endeds
+       debugNetPrintf(INFO,"reached EOF\n");
+    }
+    num++;
+
+    debugNetPrintf(INFO,"num: %d, %zub, %zub, total: %zub, remain: %zub (%f)\n",
+                          num,
+                          num * SIZE,
+                          readed,
+                          map_info->size,
+                          map_info->size - num * SIZE,
+                          (double)(num / (map_info->size /SIZE)));
+    return;
+}
+#endif // CHUNKED_READS
+
+
 static void mp3dec_close_file(mp3dec_map_info_t *map_info)
 {
-    /*if (map_info->buffer && MAP_FAILED != map_info->buffer)
-        munmap((void *)map_info->buffer, map_info->size);*/
+    #ifdef CHUNKED_READS
+    orbisClose(pFile);
+    #endif
+
     if(map_info->buffer)
         free((void *)map_info->buffer), map_info->buffer = NULL;
-    map_info->size   = 0;
+    map_info->size = 0;
 
     sleep(1);
 }
@@ -264,10 +305,44 @@ static int mp3dec_open_file(const char *file_name, mp3dec_map_info_t *map_info)
     memset(map_info, 0, sizeof(*map_info));
 
     #ifdef __PS4__
-    map_info->buffer =  orbisFileGetFileContent(file_name);
-    map_info->size   = _orbisFile_lastopenFile_size;
 
-    debugNetPrintf(DEBUG,"mp3dec_open_file -> buf_ref 0x%p, size %db\n", map_info->buffer, map_info->size);
+        #ifdef CHUNKED_READS
+            pFile=orbisOpen(file_name,O_RDONLY,0);
+
+            if(pFile<=0) { debugNetPrintf(DEBUG,"mp3dec_open_file failed to open file %s\n", file_name);	return 0;	}
+
+            int32_t fileSize = orbisLseek(pFile, 0, SEEK_END); // obtain file size
+            orbisLseek(pFile, 0, SEEK_SET);                    // seek back to start
+            if(fileSize<0)
+            {
+              debugNetPrintf(DEBUG,"mp3dec_open_file failed to read size of file %s\n", file_name);
+              orbisClose(pFile);
+              return 0;
+            }
+
+            //debugNetPrintf(DEBUG,"mp3dec_open_file %s, filesize :%db, %d chunks\n", file_name, fileSize, fileSize /SIZE);
+
+            map_info->buffer = calloc(SIZE *2, sizeof(unsigned char));
+            map_info->size   = fileSize;
+            num              = 0;  // chunks readed
+            readed           = 0;  // bytes  readed
+
+            // initial filling of the reader buffer, (SIZE *2)
+            for(int i=0; i < 2; i++)
+            {
+                mp3dec_read_chunk(map_info, i * SIZE);
+            }
+
+        #else  // CHUNKED_READS
+            // if we could mallocate w/o limits...
+            map_info->buffer =  orbisFileGetFileContent(file_name);  // read whole file in malloc'ed buffer
+            map_info->size   = _orbisFile_lastopenFile_size;
+
+        #endif
+    debugNetPrintf(INFO,"mp3dec_open_file -> buf_ref 0x%p, filesize %db, %d chunks\n",
+                                   map_info->buffer,
+                                   map_info->size,
+                                   map_info->size /SIZE);
 
     if(!map_info->buffer) return 0;
     else                  return 1;

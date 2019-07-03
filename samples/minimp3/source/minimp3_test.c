@@ -189,7 +189,18 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
 
     if (m_bPlaying == 1)
     {
-        // Playing , so mix up a buffer 
+        #ifdef CHUNKED_READS
+        if((buf2  - orig_buf2) >= SIZE)  // feed the reading buffer
+        {
+            // move remaining bytes to head of reading buffer
+            memcpy((void*)&map_info.buffer[0], (void*)&map_info.buffer[SIZE], SIZE);
+            mp3dec_read_chunk(&map_info, SIZE);
+            buf2 -= SIZE;
+            /*debugNetPrintf(DEBUG,"read_chunk %p %d\n", buf2, buf2  - orig_buf2);*/
+        }
+        #endif
+
+        // Playing , so mix up a buffer
         if(fill < 2048)
         {
             if(numframe %200 == 0) { debugNetPrintf(DEBUG,"fill: %d samples, %db, snd:%db, play_buf:%db\n",
@@ -347,6 +358,7 @@ int minimp3_Load(char *input_file_name)
 int minimp3_Play(void)
 {
     orbisAudioSetCallback(minimp3_playint_channel, minimp3_PlayCallback,0);
+    fill = 0;
     m_bPlaying = 1;
     return 1;
 }
