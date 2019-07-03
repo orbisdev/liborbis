@@ -152,7 +152,7 @@ void updateController()
             debugNetPrintf(DEBUG,"Circle pressed reset position and color red\n");
             x=1280/2;
             y=720/2;
-            color=0x80ff0000;    
+            color=0x80ff0000;
             orbisAudioResume(0);
         }
         if(orbisPadGetButtonPressed(ORBISPAD_CROSS))
@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
     // wait for current display buffer
     orbis2dStartDrawing();
 
-    // clear with background (default white) to the current display buffer 
+    // clear with background (default white) to the current display buffer
     orbis2dClearBuffer(1);
 
     // flush and flip

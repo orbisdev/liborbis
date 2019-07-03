@@ -82,7 +82,7 @@ void mp3dec_load_buf(mp3dec_t *dec, const uint8_t *buf, size_t buf_size, mp3dec_
     mp3dec_frame_info_t frame_info;
     memset(info, 0, sizeof(*info));
     memset(&frame_info, 0, sizeof(frame_info));
-    
+
     debugNetPrintf(DEBUG,"%d %zu %p\n", MINIMP3_MAX_SAMPLES_PER_FRAME, sizeof(frame_info), user_data);
     /* skip id3v2 */
     size_t id3v2size = mp3dec_skip_id3v2(buf, buf_size);
@@ -104,15 +104,14 @@ void mp3dec_load_buf(mp3dec_t *dec, const uint8_t *buf, size_t buf_size, mp3dec_
     } while (frame_info.frame_bytes);
     if (!samples)
         return;
-        
-        
+
     samples *= frame_info.channels;
     size_t allocated = (buf_size/frame_info.frame_bytes)*samples*sizeof(mp3d_sample_t) + MINIMP3_MAX_SAMPLES_PER_FRAME*sizeof(mp3d_sample_t);
     info->buffer = (mp3d_sample_t*)malloc(allocated);
     if (!info->buffer)
         return;
     debugNetPrintf(DEBUG,"allocated %zu\n", allocated);
-        
+
     info->samples = samples;
     memcpy(info->buffer, pcm, info->samples*sizeof(mp3d_sample_t));
     /* save info */
@@ -149,9 +148,9 @@ void mp3dec_load_buf(mp3dec_t *dec, const uint8_t *buf, size_t buf_size, mp3dec_
             frames++;
             if (progress_cb)
                 progress_cb(user_data, orig_buf_size, orig_buf_size - buf_size, &frame_info);
-                
+
             debugNetPrintf(DEBUG,"info->samples %zu, frames: %zu\n", info->samples, frames);
-            
+
             //ao_play(device, info->buffer + info->samples, buf_size);
 
         }
@@ -204,7 +203,7 @@ void mp3dec_iterate_buf(const uint8_t *buf, size_t buf_size, MP3D_ITERATE_CB cal
     //sceAudioOutOutput(handle, NULL);
     //debugNetPrintf(DEBUG,"info %d %p %d %d %d\n", i, buf, buf_size, frame_info.hz, frame_info.channels);
   // !!!
-  break;    
+  break;
     } while (1);
 }
 
@@ -302,7 +301,7 @@ retry_mmap:
 #else
 #include <stdio.h>
 
-static void mp3dec_close_file(mp3dec_map_info_t *map_info)
+static void mp3dec_close_file2(mp3dec_map_info_t *map_info)
 {
     if (map_info->buffer)
         free((void *)map_info->buffer);

@@ -22,6 +22,9 @@
 
   // rip and convert audio to stereo mp3, 48Hz
   ffmpeg -i input.mp4 -c:a libmp3lame -ac 2 -b:a 190k -ar 48000 outputfile.mp3
+
+  // remove Video stuff info, can break id3v2 parsing
+  ffmpeg -i input.mp3 -map 0 -map -0:v -c:a libmp3lame -ac 2 -ab 128k -ar 48000 -map_metadata 0 -id3v2_version 3 outputfile.mp3
 */
 
 #define MP4_MODE
@@ -53,12 +56,11 @@ int default_driver;
 static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *userdata);
 static int  minimp3_playint_channel;
 static int  m_bPlaying = 0;  // Set to true when an mp3 is being played
-static char selected[256];
+static char selected[256];   // just to test mp3 switching
 
 // samples are shorts, * 2 channels
-static short      snd[ 1152 *2];
-static short play_buf[(1024 *2) *4];
-
+static short      snd[ 1152 *2];      // for 'two step' filling of buffer below (can be useless)
+static short play_buf[(1024 *2) *4];  // small fixed buffer to store decoded pcm s16le samples
 
 static int16_t read16le(const void *p)
 {
@@ -100,7 +102,7 @@ mp3dec_file_info_t  info;
 frames_iterate_data d;
 mp3dec_map_info_t   map_info;
 
-// for debug
+// for debug, but useless
 void dump(unsigned char *p)
 {
     char msg[1024];
@@ -132,8 +134,9 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
     /*
     debugNetPrintf(DEBUG,"(fi_cb) %p frame:%p size:%db frame_offset:%d %d\n", d, frame, frame_size, (int)offset, (d->allocated - d->info->samples*sizeof(mp3d_sample_t)));
     */
-    debugNetPrintf(DEBUG,"%p samples %zu, %zu\n",
-        &d->info->buffer, d->info->samples, (int)offset);
+    if(numframe %200 == 0)
+    { debugNetPrintf(DEBUG,"%p samples %zu, %zu\n",
+          &d->info->buffer, d->info->samples, (int)offset); }
 
     // decode frame
     int samples = mp3dec_decode_frame(d->mp3d, frame, frame_size,
@@ -146,16 +149,19 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
     memcpy(&play_buf[fill], &snd[0], 4608);
     fill += 1152 /*samples*/ *2;
 
-    debugNetPrintf(INFO,"decoded, memcpy(%p, %p, %zu); fill:%d\n",
-         &play_buf[fill],
-         &snd, 4608,
-         fill);
+    if(numframe %200 == 0)
+    {
+        debugNetPrintf(INFO,"decoded, memcpy(%p, %p, %zu); fill:%d\n",
+             &play_buf[fill],
+             &snd, 4608,
+              fill);
+    }
 
     if (samples)
     {
         d->info->samples += samples*info->channels;
     }
-    debugNetPrintf(INFO,"fill now: %d, free: %lu\n\n", fill, sizeof(play_buf) - (fill * 2));
+    if(numframe %200 == 0) { debugNetPrintf(INFO,"fill now: %d, free: %lu\n\n", fill, sizeof(play_buf) - (fill * 2)); }
 
     sceKernelUsleep(100000);
 
@@ -164,10 +170,9 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
 #endif
 
 
-
-static const uint8_t      *buf2;
+static const uint8_t      *buf2;       // will be moved
 static const uint8_t *orig_buf2;
-static       size_t        buf2_size;
+static       size_t        buf2_size;  // will be consumed
 static       size_t   orig_buf2_size;
 static mp3dec_frame_info_t frame_info2;
 
@@ -187,8 +192,8 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
         // Playing , so mix up a buffer 
         if(fill < 2048)
         {
-            debugNetPrintf(DEBUG,"fill: %d samples, %db, snd:%db, play_buf:%db\n",
-                                  fill, fill * sizeof(short), sizeof(snd), sizeof(play_buf));
+            if(numframe %200 == 0) { debugNetPrintf(DEBUG,"fill: %d samples, %db, snd:%db, play_buf:%db\n",
+                                                           fill, fill * sizeof(short), sizeof(snd), sizeof(play_buf)); }
 
             /* void mp3dec_iterate_buf(const uint8_t *buf, size_t buf_size, MP3D_ITERATE_CB callback, void *user_data) */
             do
@@ -208,13 +213,18 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
                 frame_info2.bitrate_kbps = hdr_bitrate_kbps(hdr);
                 frame_info2.frame_bytes = frame_size;
 
+                //debugNetPrintf(DEBUG,"ficb %p %p %d %d\n", &d, hdr, frame_size, hdr - orig_buf2);
+                //log: [PS4][DEBUG]: ficb 210962768 880179fca 576 32778
+
                 if (frames_iterate_cb(&d, hdr, frame_size, hdr - orig_buf2, &frame_info2))
                     break;
                 buf2      += frame_size;
                 buf2_size -= frame_size;
 
-                debugNetPrintf(DEBUG,"info %d %p %d %d %d\n",
-                                  i, buf2, buf2_size, frame_info2.hz, frame_info2.channels);
+                if(numframe %200 == 0)
+                { debugNetPrintf(DEBUG,"info %d buf2:%p buf2_size:%zu %d %d\n",
+                                      i, buf2, buf2_size, frame_info2.hz, frame_info2.channels); }
+
           break;  // don't loop all frames!!!
             } while (1);
 
@@ -224,8 +234,8 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
       //for (count = 0; count < length * 2; count++) { *(_buf + count)  = play_buf[count]; }
         memcpy(_buf, &play_buf, length *2 * sizeof(short));
 
-        // move to front
-        memcpy(&play_buf[0], &play_buf[1024 *2], sizeof(play_buf) - fill *2); // move
+        // move remaining samples to head of buffer
+        memcpy(&play_buf[0], &play_buf[1024 *2], sizeof(play_buf) - fill *2);
         /*
         debugNetPrintf(INFO,"  move,  memcpy(%p, %p, %zu); %d %d\n", &play_buf[0],
                                                                      &play_buf[1024 *2],
@@ -234,10 +244,11 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
         */
         fill -= 1024 *2;
 
-        // no more frames to decode
-        if(buf2_size <= 0
+        if(buf2_size <= 0  // no more frames to decode
         || fill < 0)
-        { m_bPlaying = 0; }
+        { debugNetPrintf(DEBUG,"buf2_size:%zu, fill: %d\n", buf2_size, fill);
+          m_bPlaying = 0; }
+
     }
     else // Not Playing , so clear buffer
     {
@@ -245,6 +256,8 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
 
       //for (count = 0; count < length * 2; count++) { *(_buf + count)  = 0; }
         memset(_buf, 0, length *2 * sizeof(short));
+
+        sleep(1);
     }
     numframe++;
 
@@ -262,9 +275,9 @@ void minimp3_Init(int channel)
     /// minimp3
     d.mp3d      = &mp3d;
     d.info      = &info;
-    d.allocated = 0;
+    d.allocated = SIZE *2;  // twice the readed chunk
     mp3dec_init(&mp3d);
-    memset(&info, 0, sizeof(info));
+    memset(&info,        0, sizeof(info));
     memset(&frame_info2, 0, sizeof(frame_info2));
 }
 
@@ -287,7 +300,7 @@ int minimp3_Load(char *input_file_name)
     // internally uses liborbisFile()!
     int ret = mp3dec_open_file(input_file_name, &map_info);
 
-    if(ret == 0) return 0;
+    if(ret == 0) { return 0; }
 
     // address buffer pointer and size for callback
     buf2      = map_info.buffer;
@@ -296,11 +309,14 @@ int minimp3_Load(char *input_file_name)
     // refresh current mp3
     strcpy(&selected[0], input_file_name);
 
+    //debugNetPrintf(DEBUG,"1. buf2: %p, buf2_size:%zu, fill: %d\n", buf2, buf2_size, fill);
+
     /* skip id3v2 */
     size_t id3v2size = mp3dec_skip_id3v2(buf2, buf2_size);
-    if (id3v2size > buf2_size) return -1;
+    debugNetPrintf(DEBUG,"id3v2size:%zu\n", id3v2size);
+    if(id3v2size > buf2_size) return -1;
     orig_buf2      = buf2;
-    buf2          += id3v2size;
+    buf2          += id3v2size;  // (we already read first chunk)
     buf2_size     -= id3v2size;
     orig_buf2_size = buf2_size;
 
@@ -323,6 +339,7 @@ int minimp3_Load(char *input_file_name)
     ao_close(device);
     ao_shutdown();
     */
+    //debugNetPrintf(DEBUG,"2. buf2: %p, buf2_size:%zu, fill: %d\n", buf2, buf2_size, fill);
 
     return 1;
 }
@@ -353,9 +370,9 @@ void minimp3_Loop(void)
     m_bPlaying = 0;
 
     // reset buffer pointer and size for callback
-    buf2      = orig_buf2;
-    buf2_size = orig_buf2_size;
-    fill = 0;
+    buf2       = orig_buf2;
+    buf2_size  = orig_buf2_size;
+    fill       = 0;
     m_bPlaying = 1;
 }
 
@@ -366,7 +383,7 @@ void minimp3_Loop2(void)
 
     // extend playlist
     memset(&selected[0], 0, sizeof(selected));
-    strcpy(&selected[0], "host0:main1.mp3");
+    strcpy(&selected[0], "host0:main.mp3");
     debugNetPrintf(DEBUG,"selected: %s\n", selected);
 
     int ret = minimp3_Load(selected);
