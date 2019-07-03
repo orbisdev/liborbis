@@ -92,7 +92,7 @@ typedef struct
 {
     mp3dec_t *mp3d;
     mp3dec_file_info_t *info;
-    short *_buf;
+    //short *_buf;
     size_t allocated;
 } frames_iterate_data;
 
@@ -183,7 +183,6 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
     int handle = orbisAudioGetHandle(minimp3_playint_channel);
 
     // debugNetPrintf(3,"Inside ModPlayCallback %d\n",length);
-    //int count;
     short *_buf = (short *)_buf2;
 
     if (m_bPlaying == 1)
@@ -362,11 +361,12 @@ int minimp3_Play(void)
     return 1;
 }
 
-void minimp3_Pause(void)
+/*
+void minimp3_Pause(int flag)
 {
-    m_bPlaying = 0;
-    //orbisAudioSetCallback(minimp3_playint_channel, 0,0);
+    m_bPlaying = (flag) ? 0 : 1;
 }
+*/
 
 void minimp3_End(void)
 {
@@ -376,7 +376,7 @@ void minimp3_End(void)
     mp3dec_close_file(&map_info);
 }
 
-void minimp3_Loop(void)
+void minimp3_Loop1(void)
 {
     m_bPlaying = 0;
 
@@ -387,7 +387,7 @@ void minimp3_Loop(void)
     m_bPlaying = 1;
 }
 
-void minimp3_Loop2(void)
+void minimp3_Loop(void)
 {
     minimp3_End();
     minimp3_Init(0);

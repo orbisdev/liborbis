@@ -163,6 +163,7 @@ void updateController()
             B=rand()%256;
             color=0x80000000|R<<16|G<<8|B;
             //orbisAudioStop();
+            //test();
         }
         if(orbisPadGetButtonPressed(ORBISPAD_SQUARE))
         {
@@ -187,6 +188,7 @@ void updateController()
         if(orbisPadGetButtonPressed(ORBISPAD_R1))
         {
             debugNetPrintf(DEBUG,"R1 pressed\n");
+            minimp3_Loop();
         }
         if(orbisPadGetButtonPressed(ORBISPAD_R2))
         {
