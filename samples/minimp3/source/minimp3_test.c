@@ -122,7 +122,8 @@ void dump(unsigned char *p)
 }
 
 // keep track of filling buffer, in samples
-static int fill = 0;
+static int          fill     = 0;
+static unsigned int numframe = 0;
 
 static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_size, size_t offset, mp3dec_frame_info_t *info)
 {
@@ -140,13 +141,13 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
 
     // decode frame
     int samples = mp3dec_decode_frame(d->mp3d, frame, frame_size,
-                                      (short*)&snd, // direct copy to dst
+                                      (short*)&play_buf[fill], // direct copy to dst, no 'two step'
                                       //d->info->buffer + d->info->samples, // dst
                                       info);
     // dump(&snd);
 
     // write to play buffer
-    memcpy(&play_buf[fill], &snd[0], 4608);
+    //memcpy(&play_buf[fill], &snd[0], 4608);  // we can do in two step, but wasteful
     fill += 1152 /*samples*/ *2;
 
     if(numframe %200 == 0)
@@ -175,8 +176,6 @@ static const uint8_t *orig_buf2;
 static       size_t        buf2_size;  // will be consumed
 static       size_t   orig_buf2_size;
 static mp3dec_frame_info_t frame_info2;
-
-static unsigned int numframe = 0;
 
 
 static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *pdata)
