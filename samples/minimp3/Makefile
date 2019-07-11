@@ -14,5 +14,8 @@ target ?= ps4_elf
 TargetFile=homebrew.elf
 
 include $(Ps4Sdk)/make/ps4sdk.mk
-LinkerFlags += -lorbisFile -ldebugnet -lps4link -lelfloader -lorbis2d -lorbisPad -lorbisAudio -lorbisXbmFont -lSceNet_stub -lSceAudioOut_stub -lSceVideoOut_stub -lSceSystemService_stub -lSceUserService_stub -lSceGnmDriver_stub -lScePad_stub
+LinkerFlags += -lfreetype -lorbisFile -ldebugnet -lorbisFileBrowser -lps4link -lelfloader -lorbis2d -lorbisPad -lorbisAudio -lorbisXbmFont -lSceNet_stub -lSceAudioOut_stub -lSceVideoOut_stub -lSceSystemService_stub -lSceUserService_stub -lSceGnmDriver_stub -lScePad_stub
+
+
+IncludePath += -I$(Ps4Sdk)/include/freetype2
 
