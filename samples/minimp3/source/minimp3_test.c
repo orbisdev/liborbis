@@ -37,10 +37,7 @@
 //#define MINIMP3_ALLOW_MONO_STEREO_TRANSITION
 #include "minimp3_ex.h"
 
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <strings.h>
+#include "minimp3_test.h"
 
 /*
 #include <ao/ao.h>
@@ -57,6 +54,13 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
 static int  minimp3_playint_channel;
 static int  m_bPlaying = 0;  // Set to true when an mp3 is being played
 static char selected[256];   // just to test mp3 switching
+
+void select_file(char *p)
+{
+    memset(&selected[0], 0, sizeof(selected));
+    strcpy(&selected[0], "host0:");
+    strcpy(&selected[6], p);
+}
 
 // samples are shorts, * 2 channels
 static short      snd[ 1152 *2];      // for 'two step' filling of buffer below (can be useless)
@@ -92,7 +96,6 @@ typedef struct
 {
     mp3dec_t *mp3d;
     mp3dec_file_info_t *info;
-    //short *_buf;
     size_t allocated;
 } frames_iterate_data;
 
@@ -135,7 +138,7 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
     /*
     debugNetPrintf(DEBUG,"(fi_cb) %p frame:%p size:%db frame_offset:%d %d\n", d, frame, frame_size, (int)offset, (d->allocated - d->info->samples*sizeof(mp3d_sample_t)));
     */
-    if(numframe %200 == 0)
+    if(numframe %500 == 0)
     { debugNetPrintf(DEBUG,"%p samples %zu, %zu\n",
           &d->info->buffer, d->info->samples, (int)offset); }
 
@@ -261,7 +264,7 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
     }
     else // Not Playing , so clear buffer
     {
-        if(numframe %200 == 0) { debugNetPrintf(DEBUG,"Inside minimp3_PlayCallback not playing m_bPlaying is %d\n",m_bPlaying); }
+        if(numframe %1000 == 0) { debugNetPrintf(DEBUG,"Inside minimp3_PlayCallback not playing m_bPlaying is %d\n",m_bPlaying); }
 
       //for (count = 0; count < length * 2; count++) { *(_buf + count)  = 0; }
         memset(_buf, 0, length *2 * sizeof(short));
@@ -355,8 +358,8 @@ int minimp3_Load(char *input_file_name)
 
 int minimp3_Play(void)
 {
-    orbisAudioSetCallback(minimp3_playint_channel, minimp3_PlayCallback,0);
     fill = 0;
+    orbisAudioSetCallback(minimp3_playint_channel, minimp3_PlayCallback, 0);
     m_bPlaying = 1;
     return 1;
 }

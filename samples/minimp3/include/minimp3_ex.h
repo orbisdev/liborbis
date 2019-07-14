@@ -313,7 +313,9 @@ static int mp3dec_open_file(const char *file_name, mp3dec_map_info_t *map_info)
 
             int32_t fileSize = orbisLseek(pFile, 0, SEEK_END); // obtain file size
             orbisLseek(pFile, 0, SEEK_SET);                    // seek back to start
-            if(fileSize<0)
+            if(fileSize < 0
+            || fileSize < SIZE *2
+            )
             {
               debugNetPrintf(DEBUG,"mp3dec_open_file failed to read size of file %s\n", file_name);
               orbisClose(pFile);
