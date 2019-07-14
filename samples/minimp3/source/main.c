@@ -54,6 +54,13 @@ static void rr()  // randomize rectangle
     rcolor = ARGB(0xFF, rand()%256, rand()%256, rand()%256);
 }
 
+#include "minimp3_test.h"  // mp3 decoder
+
+#include "menu.h"   // menu part
+v3i pos = (0);      // file selection in menu
+
+#include "freetype.h"  // uses FT_
+
 void updateController()
 {
     int ret;
@@ -93,26 +100,27 @@ void updateController()
         {
             debugNetPrintf(DEBUG,"Up pressed\n");
 
-            if(y-step>=0)
+            switch(pos.z)
             {
-                y=y-step;
-            }
-            else
-            {
-                y=0;
+                case MAIN:
+                    pos.y--; refresh = browserUpdateController(&pos); break;
+                default:
+                    y = (y-step>=0) ? y-step : 0;
+                    break;
             }
         }
         if(orbisPadGetButtonPressed(ORBISPAD_DOWN) || orbisPadGetButtonHold(ORBISPAD_DOWN))
         {
             debugNetPrintf(DEBUG,"Down pressed\n");
 
-            if(y+step<conf->height-1)
+            switch(pos.z)
             {
-                y=y+step;
-            }
-            else
-            {
-                y=conf->height-1-step;
+                case MAIN:
+                    pos.y++; refresh = browserUpdateController(&pos);
+                    break;
+                default:
+                    y = (y+step<conf->height-1) ? y+step : conf->height-1-step;
+                    break;
             }
         }
         if(orbisPadGetButtonPressed(ORBISPAD_RIGHT) || orbisPadGetButtonHold(ORBISPAD_RIGHT))
@@ -188,22 +196,27 @@ void updateController()
         if(orbisPadGetButtonPressed(ORBISPAD_R1))
         {
             debugNetPrintf(DEBUG,"R1 pressed\n");
-            minimp3_Loop();
+            if(pos.z == MAIN)
+                minimp3_Loop();
         }
         if(orbisPadGetButtonPressed(ORBISPAD_R2))
         {
-            debugNetPrintf(DEBUG,"R2 pressed\n");
+            debugNetPrintf(DEBUG,"R2 pressed, %d %d %d\n", pos.x, pos.y, pos.z);
+            pos.z = (pos.z != MAIN) ? MAIN : CLOSED;
+            refresh = 1;
         }
     }
 }
 
 void finishApp()
 {
+    FT_end();
+
     orbisAudioFinish();
     orbisPadFinish();
     orbisFileFinish();
+    orbisFileBrowserFinish();
     orbis2dFinish();
-
     ps4LinkFinish();
 }
 
@@ -217,6 +230,8 @@ void initApp()
     //more library initialiazation here pad,filebroser,audio,keyboard, etc
     //....
     orbisFileInit();
+    orbisFileBrowserInit("host0:");
+
     ret=orbisPadInitWithConf(myConf->confPad);
     if(ret==1)
     {
@@ -236,6 +251,8 @@ void initApp()
             }
         }
     }
+
+    FT_init();
 }
 
 
@@ -259,7 +276,7 @@ int main(int argc, char *argv[])
     initApp();
 
     minimp3_Init(0);
-    ret =   minimp3_Load("host0:main0.mp3");
+    ret =   minimp3_Load("host0:outputfile.mp3");
     if(ret) minimp3_Play();
     orbisAudioResume(0);
 
@@ -272,9 +289,15 @@ int main(int argc, char *argv[])
     int tx = get_aligned_x(tmp_ln, CENTER);  // center text
 
     rr();
+conf->bgColor=0xFF000000;
 
     while(flag)
     {
+        /*if(flipArg %2 == 0)
+        {
+          conf->bgColor=get_new_color(); //refresh=1;
+        }*/
+
         // capture pad data and populate positions
         // X random color
         // O reset to center position and red color
@@ -285,27 +308,52 @@ int main(int argc, char *argv[])
         //wait for current display buffer
         orbis2dStartDrawing();
 
-        // clear the current display buffer
-        orbis2dClearBuffer(0);  // uses cached dumpBuf
-
-        if(refresh)    // draw the background image
+        if(refresh) // draw the background image
         {
             orbis2dClearBuffer(1);  // don't use dumpBuf, force clean
 
             // draw a background
             orbis2dDrawRectColor(rx, rw, ry, rh, rcolor);
+            
+            switch(pos.z)
+            {
+              case MAIN:
+                  browserDraw(&pos);
+                  break;
+
+              default:
+                  for(int i =12; i<17; i++)
+                  {
+                      c1 = 0xFFEEDDFF, c2 = 0xFF221133;
+                      FT_update_gradient(&c1, &c2);  // compute internal fading colors
+                      FT_set_text_size(i, 100);
+                      sprintf(tmp_ln, "%dpt/100dpi: a quick brown fox jumps over the lazy dog !@#$%&/()=?^", i);
+                      tx = FT_get_text_lenght(ATTR_WIDTH /2, ATTR_HEIGHT /2, tmp_ln);
+                      FT_print_text((ATTR_WIDTH - tx) /2, 50 + (i-8) *29, tmp_ln);
+                  }
+                  //print_text(tx, ATTR_HEIGHT /2, tmp_ln);  // draw text with Xbm_Font
+                  break;
+            }
 
             orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
             debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
         }
-
-
-        // draw text with Xbm_Font
-        print_text(tx, ATTR_HEIGHT /2, tmp_ln);
-
-        // default red is here press X to random color
-        orbis2dDrawRectColor(x,w,y,h,color);
-
+        else
+        {
+            // clear the current display buffer
+            orbis2dClearBuffer(0);  // uses cached dumpBuf
+        }
+        
+        switch(pos.z)
+        {
+          case MAIN:
+              browserDrawSelection(&pos);
+              break;
+          default:
+              orbis2dDrawRectColor(x, w, y, h, color); // default red, press X to random color
+              break;
+        }
+        
         // flush and flip
         orbis2dFinishDrawing(flipArg);
 
@@ -314,7 +362,7 @@ int main(int argc, char *argv[])
         flipArg++;
 
         // take a breath, 10*1 microsecond
-        sceKernelUsleep(10*1000);
+        sceKernelUsleep(10000);
     }
 
     orbisAudioResume(0);

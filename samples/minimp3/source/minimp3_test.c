@@ -395,9 +395,6 @@ void minimp3_Loop(void)
     minimp3_End();
     minimp3_Init(0);
 
-    // extend playlist
-    memset(&selected[0], 0, sizeof(selected));
-    strcpy(&selected[0], "host0:main.mp3");
     debugNetPrintf(DEBUG,"selected: %s\n", selected);
 
     int ret = minimp3_Load(selected);
