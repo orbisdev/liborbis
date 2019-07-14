@@ -4,23 +4,16 @@
  * masterzorag@gmail.com
  */
 
-#include <ps4link.h>
-#include <math.h>       // sinf, cosf
-#include <orbis2d.h>
-#include <orbisFile.h>
-// each orbisFileGetFileContent() call will update filesize!
-extern size_t _orbisFile_lastopenFile_size;
+#include "freetype.h"
 
-/* FreeType font support */
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 static FT_Library library;
 static FT_Face    face   = NULL;
 static FT_Byte   *buffer = NULL;  // stores .ttf font data
 
+
 /* precomputed gradient colors [0-7] */
-#define SIMPLE_GRADIENT_STEPS 8
+#define SIMPLE_GRADIENT_STEPS  (8)
 static uint32_t fading_color[SIMPLE_GRADIENT_STEPS];
 
 static uint32_t c1 = 0xFFFFFFFF,
@@ -229,7 +222,7 @@ void FT_set_text_size(int pt, int dpi)
 /* initialize library,
    create face object,
    set character size */
-void FT_init()
+void FT_init(void)
 {
     FT_update_gradient(&c1, &c2);
 
