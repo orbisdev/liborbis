@@ -61,6 +61,8 @@ v4i pos = (0);      // file selection in menu
 
 #include "freetype.h"  // uses FT_
 
+#include "twist.h"  // twister demo
+
 void updateController()
 {
     int ret;
@@ -275,8 +277,16 @@ void initApp()
     }
 
     FT_init();
+    Twister_init();
 }
 
+
+/* sin(radian) stays in range [-1, 1]: affine trasform to color component [0, 255] */
+/* for x in [a, b] to y in [c, d] : y = (x - a) * ( (d - c) / (b - a) ) + c        */
+static uint8_t affine(float x, float a, float b, float c, float d)
+{
+    return (x - a) * ( (d - c) / (b - a) ) + c;
+}
 
 uint32_t c1, c2;   // colors to fade text
 char tmp_ln[256];  // buffer to store text
@@ -315,10 +325,30 @@ int main(int argc, char *argv[])
 
     while(flag)
     {
-        /*if(flipArg %2 == 0)
+        if(flipArg %5 == 0)
         {
-          conf->bgColor=get_new_color(); //refresh=1;
-        }*/
+            //conf->bgColor=get_new_color(); //refresh=1;
+
+            /* let's use sin/cos to fade faces color */
+            uint32_t f1, f2;
+            uint8_t  r, g, b;
+            double   radian = (flipArg%360) * (M_PI/180);
+
+            /* sin(radian) stays in range [-1, 1]: affine trasform to color component [t1, t2] */
+            r = affine(sin(radian), -1, 1, 32, 240);  // maps to [32-240]
+            g = affine(cos(radian), -1, 1,  0, 100);  // maps to [ 0-255]
+            b = affine(cos(radian), -1, 1, 64, 240);  // maps to [64-240]
+
+//debugNetPrintf(DEBUG,"%f in [%d %d] = %d in [%d %d]\n", sin(radian), -1, 1, r, 0x33, 255);
+//debugNetPrintf(DEBUG,"sin value is %lf, radian: %lf\n", sin(radian), radian);
+
+          //debugNetPrintf(DEBUG,"[r:%3d g:%3d b:%3d]\n", r, g, b);
+            f1 = ARGB(0xFF, r,    0x00, b   );
+            f2 = ARGB(0xFF, b-32, g,    b   );
+
+            update_twist_color(&f1, &f2);
+            //debugNetPrintf(DEBUG,"update_twist_color(%.8X, %.8X)\n", f1, f2);
+        }
 
         // capture pad data and populate positions
         // X random color
@@ -336,7 +366,7 @@ int main(int argc, char *argv[])
 
             // draw a background
             orbis2dDrawRectColor(rx, rw, ry, rh, rcolor);
-            
+
             switch(pos.z)
             {
               case MAIN:
@@ -365,17 +395,18 @@ int main(int argc, char *argv[])
             // clear the current display buffer
             orbis2dClearBuffer(0);  // uses cached dumpBuf
         }
-        
+
         switch(pos.z)
         {
           case MAIN:
               browserDrawSelection(&pos);
+              Twister_draw();
               break;
           default:
               orbis2dDrawRectColor(x, w, y, h, color); // default red, press X to random color
               break;
         }
-        
+
         // flush and flip
         orbis2dFinishDrawing(flipArg);
 
