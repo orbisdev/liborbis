@@ -53,14 +53,6 @@ int default_driver;
 static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,void *userdata);
 static int  minimp3_playint_channel;
 static int  m_bPlaying = 0;  // Set to true when an mp3 is being played
-static char selected[256];   // just to test mp3 switching
-
-void select_file(char *p)
-{
-    memset(&selected[0], 0, sizeof(selected));
-    strcpy(&selected[0], "host0:");
-    strcpy(&selected[6], p);
-}
 
 // samples are shorts, * 2 channels
 static short      snd[ 1152 *2];      // for 'two step' filling of buffer below (can be useless)
@@ -318,9 +310,6 @@ int minimp3_Load(char *input_file_name)
     buf2      = map_info.buffer;
     buf2_size = map_info.size;
 
-    // refresh current mp3
-    strcpy(&selected[0], input_file_name);
-
     //debugNetPrintf(DEBUG,"1. buf2: %p, buf2_size:%zu, fill: %d\n", buf2, buf2_size, fill);
 
     /* skip id3v2 */
@@ -390,7 +379,7 @@ void minimp3_Loop1(void)
     m_bPlaying = 1;
 }
 
-void minimp3_Loop(void)
+void minimp3_Loop(char *selected)
 {
     minimp3_End();
     minimp3_Init(0);
