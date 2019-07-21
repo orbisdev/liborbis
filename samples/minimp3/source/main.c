@@ -57,7 +57,7 @@ static void rr()  // randomize rectangle
 #include "minimp3_test.h"  // mp3 decoder
 
 #include "menu.h"   // menu part
-v3i pos = (0);      // file selection in menu
+v4i pos = (0);      // file selection in menu
 
 #include "freetype.h"  // uses FT_
 
@@ -103,7 +103,9 @@ void updateController()
             switch(pos.z)
             {
                 case MAIN:
-                    pos.y--; refresh = browserUpdateController(&pos); break;
+                    pos.w   = ORBISPAD_UP;
+                    refresh = browserUpdateController(&pos);
+                    break;
                 default:
                     y = (y-step>=0) ? y-step : 0;
                     break;
@@ -116,7 +118,8 @@ void updateController()
             switch(pos.z)
             {
                 case MAIN:
-                    pos.y++; refresh = browserUpdateController(&pos);
+                    pos.w   = ORBISPAD_DOWN;
+                    refresh = browserUpdateController(&pos);
                     break;
                 default:
                     y = (y+step<conf->height-1) ? y+step : conf->height-1-step;
@@ -158,20 +161,42 @@ void updateController()
         if(orbisPadGetButtonPressed(ORBISPAD_CIRCLE))
         {
             debugNetPrintf(DEBUG,"Circle pressed reset position and color red\n");
-            x=1280/2;
-            y=720/2;
-            color=0x80ff0000;
-            orbisAudioResume(0);
+
+            switch(pos.z)
+            {
+                case MAIN:
+                    pos.w   = ORBISPAD_CIRCLE;
+                    refresh = browserUpdateController(&pos);
+                    break;
+                default:
+                    x=1280/2;
+                    y=720/2;
+                    color=0x80ff0000;
+                    orbisAudioResume(0);
+                    break;
+            }
         }
         if(orbisPadGetButtonPressed(ORBISPAD_CROSS))
         {
             debugNetPrintf(DEBUG,"Cross pressed rand color\n");
-            R=rand()%256;
-            G=rand()%256;
-            B=rand()%256;
-            color=0x80000000|R<<16|G<<8|B;
-            //orbisAudioStop();
-            //test();
+
+            switch(pos.z)
+            {
+                case MAIN:
+                    pos.w   = ORBISPAD_CROSS;
+                    refresh = browserUpdateController(&pos);                    //enterDir(&pos); refresh = 1;
+                    break;
+                default:
+                    R=rand()%256;
+                    G=rand()%256;
+                    B=rand()%256;
+                    color=0x80000000|R<<16|G<<8|B;
+                    //orbisAudioStop();
+
+                    //test();
+                    break;
+            }
+
         }
         if(orbisPadGetButtonPressed(ORBISPAD_SQUARE))
         {
@@ -190,14 +215,11 @@ void updateController()
         if(orbisPadGetButtonPressed(ORBISPAD_L2))
         {
             debugNetPrintf(DEBUG,"L2 pressed\n");
-            rr();
-            refresh = 1;
+            //rr(); refresh = 1;
         }
         if(orbisPadGetButtonPressed(ORBISPAD_R1))
         {
             debugNetPrintf(DEBUG,"R1 pressed\n");
-            if(pos.z == MAIN)
-                minimp3_Loop();
         }
         if(orbisPadGetButtonPressed(ORBISPAD_R2))
         {
@@ -288,8 +310,8 @@ int main(int argc, char *argv[])
     sprintf(tmp_ln, "minimp3 liborbis demo");
     int tx = get_aligned_x(tmp_ln, CENTER);  // center text
 
-    rr();
-conf->bgColor=0xFF000000;
+    //rr();
+    conf->bgColor=0xFF200022;
 
     while(flag)
     {
