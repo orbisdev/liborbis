@@ -200,14 +200,76 @@ Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *path)
 	return orbis2dLoadPngFromBuffer(buf);  //create png from buf
 }
 
+
 // uses standard open/lseek/read/close to access sandbox'ed content
-Orbis2dTexture *orbis2dLoadPngFromSandBox(const char *path)
+Orbis2dTexture *orbis2dLoadPngFromSandBox(const char *file)
 {
 	int fd;             // descriptor to manage file from /mnt/sanbox/...
 	int filesize;       // variable to control file size
 	uint8_t *buf=NULL;  // buffer for read from file
+	
+	DIR *dir;
+	
+char *path = /mnt/sandbox/pfsmnt/
 
-	fd = open(path,O_RDONLY);  // we open file in read only
+	char *slash = "/";
+
+	int ret = 1;
+
+	struct dirent *entry;
+	//checking if it failed to open and report errors to STDERR
+	if ((dir = opendir(path)) == NULL) {
+		return EXIT_FAILURE;
+	} //debugNetPrintf(DEBUG, "New Search Query for File: %s\n Starting in Dir: %s\n", file, path);
+
+
+		debugNetPrintf(DEBUG, "Looking for File: %s\n Currently in Dir: %s\n", file, path);
+
+	while ((entry = readdir(dir))) {
+
+		//if is . or .. we continue to prevent winging back and forth
+
+		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+			continue;
+
+		//we check if the path has already a / if not we add one
+
+		int length = strlen(path);
+
+		if (path[length - 1] != '/') {
+			slash = "/";
+		}
+
+		length += strlen(entry->d_name) + 2;
+		char *newpath = malloc(length);
+		if (!newpath) {
+			break;
+		}
+
+		snprintf(newpath, length, "%s%s%s", path, slash, entry->d_name);
+
+		if (strcmp(entry->d_name, file) == 0) {
+			debugNetPrintf(DEBUG, "Was found here %s Search Successful\n", newpath);
+			ret = EXIT_SUCCESS;
+			break;
+		}
+		//checking if is a directory to do a recursive call
+		// using DT_DIR to avoid the use of lstat or stat
+		// if not directory we free the memory and move on
+		if (entry->d_type == DT_DIR)
+			OrbisRecursiveSearch(newpath, file);
+		else {
+			free(newpath);
+			continue;
+		}
+
+		free(newpath);
+	}
+	if (closedir(dir) != 0) {
+		return EXIT_FAILURE;
+	}
+
+	fd = open(newpath ,O_RDONLY);  // we open file in read only
 
 	if(fd<0)  //If we can't open file, print the error and return
 	{

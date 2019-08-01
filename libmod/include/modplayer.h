@@ -45,6 +45,7 @@ typedef struct {
     void Mod_Init(int channel);
     int Mod_Play();
     void Mod_Pause();
+    int Mod_Load_From_SandBox(char *filename);
     int Mod_Stop();
     void Mod_End();
     int Mod_Load(char *filename);
