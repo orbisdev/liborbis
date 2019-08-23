@@ -1,4 +1,4 @@
-
+#include <unistd.h>  // sleep()
 #include <ps4link.h>
 #include <math.h>       // sinf, cosf
 #include <orbis2d.h>
@@ -15,7 +15,7 @@ void FT_init(void);
 
 void FT_update_gradient(const uint32_t *a, const uint32_t *b);
 void FT_set_text_size(int pt, int dpi);
-int FT_get_text_lenght(uint dst_x, uint dst_y, const char *text);
+int  FT_get_text_lenght(uint dst_x, uint dst_y, const char *text);
 void FT_print_text(uint dst_x, uint dst_y, const char *text);
 
 void FT_end(void);
