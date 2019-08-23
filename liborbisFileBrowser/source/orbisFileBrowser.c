@@ -18,7 +18,7 @@ OrbisFileBrowserList *browserList;
 // Position
 int basePos = 0, relPos = 0;
 int basePosList[MAX_DIR_LEVELS];
-int relPosList[MAX_DIR_LEVELS];
+int relPosList [MAX_DIR_LEVELS];
 int dirLevel=0;
 
 char *devices[] = {
@@ -54,7 +54,7 @@ char* orbisFileBrowserGetListPath()
 void orbisFileBrowserSetListPath1(char *path)
 {
 	int len = strlen(browserList->path);
-	debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath %s len=%d\n",browserList->path,len);
+	debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath1 %s len=%d\n",browserList->path,len);
 	
 	if (dirLevel==0) 
 	{
@@ -73,7 +73,7 @@ void orbisFileBrowserSetListPath1(char *path)
 			}
 		//}
 		strcat(browserList->path, path);
-		debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath concat done %s len=%d\n",browserList->path,strlen(browserList->path));
+		debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath1 concat done %s len=%d\n",browserList->path,strlen(browserList->path));
 		
 	}
 }
@@ -81,7 +81,7 @@ void orbisFileBrowserSetListPath1(char *path)
 void orbisFileBrowserSetListPath(char *path)
 {
 	int len = strlen(browserList->path);
-	debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath1 %s len=%d\n",browserList->path,len);
+	debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath %s len=%d dirlevel=%d\n",browserList->path,len, dirLevel);
 	
 	if (dirLevel==0) 
 	{
@@ -101,7 +101,6 @@ void orbisFileBrowserSetListPath(char *path)
 		}
 		strcat(browserList->path, path);
 		debugNetPrintf(DEBUG,"orbisFileBrowserSetListPath concat done %s len=%d\n",browserList->path,strlen(browserList->path));
-		
 	}
 }
 void orbisFileBrowserEntryDown()
@@ -211,18 +210,18 @@ void orbisFileBrowserListClean()
 		
 		OrbisFileBrowserListEntry *entry = browserList->head;
 
-		while (entry) 
+		while (entry)
 		{
-		    OrbisFileBrowserListEntry *next = entry->next;
-			debugNetPrintf(DEBUG,"before free %s\n",entry->dir->name);
+			OrbisFileBrowserListEntry *next = entry->next;
+			//debugNetPrintf(DEBUG,"before free %s\n",entry->dir->name);
 			
 			free(entry->dir);
-			debugNetPrintf(DEBUG,"after free dir\n");
+			//debugNetPrintf(DEBUG,"after free dir\n");
 			
-		    free(entry);
-			debugNetPrintf(DEBUG,"after free entry\n");
+			free(entry);
+			//debugNetPrintf(DEBUG,"after free entry\n");
 			
-		    entry = next;
+			entry = next;
 		}
 		
 		browserList->head=NULL;
@@ -238,9 +237,10 @@ int orbisFileBrowserListRefresh()
 	//do 
 	//{
 		orbisFileBrowserListClean();
-		debugNetPrintf(DEBUG,"after orbisFileBrowserListClean\n");
+		//debugNetPrintf(DEBUG,"after orbisFileBrowserListClean\n");
 
 		res=orbisFileBrowserListGetEntries(browserList->path);
+		debugNetPrintf(DEBUG,"orbisFileBrowserListGetEntries(%s) ret:%d\n", browserList->path, res);
 
 		if(res<0) 
 		{
@@ -522,6 +522,6 @@ void orbisFileBrowserFinish()
 {
 	orbisFileBrowserListClean();
 	if(browserList)
-	free(browserList);
+		free(browserList);
 	orbisFileBrowserInitialized=0;
 }
