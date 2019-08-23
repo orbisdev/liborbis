@@ -30,8 +30,8 @@ int orbisCheckSlotByFd(int fd)
 	{ 
 		if(orbisFileRemoteOpenDescriptors[i]==fd) 
 		{ 
-			slot=i; 
-			break; 	
+			slot=i;
+			break;
 		}
 	}
 	return slot;
@@ -61,7 +61,6 @@ int orbisOpen(const char *file, int flags, int mode)
 	}
 	if (strncmp(file,HOST0,sizeof(HOST0)-1)==0) 
 	{
-		
 		slot=orbisCheckFreeRemoteDescriptor();
 		if(slot>=0)
 		{
@@ -115,7 +114,7 @@ int orbisRead(int fd, void *data, size_t size)
 	}
 	slot=orbisCheckSlotByFd(fd);
 	if(slot>=0)
-	{	
+	{
 		ret=ps4LinkRead(fd,data,size);
 		debugNetPrintf(DEBUG,"[ORBISFILE] orbisRead slot=%d fd=%d byteread=%d\n",slot,fd,ret);
 		
@@ -275,44 +274,49 @@ size_t _orbisFile_lastopenFile_size;
 
 char * orbisFileGetFileContent(const char *filename)
 {
-    _orbisFile_lastopenFile_size = -1;  // reset exported variable
+	_orbisFile_lastopenFile_size = -1;  // reset exported variable
 
-    int pFile=orbisOpen(filename,O_RDONLY,0);
+	int pFile=orbisOpen(filename,O_RDONLY,0);
 
-    if(pFile<=0)
-    {
-        debugNetPrintf(DEBUG,"[ORBISGL] Failed to read file %s\n", filename);
-        return 0;
-    }
+	if(pFile<=0)
+	{
+		debugNetPrintf(DEBUG,"[ORBISFILE] Failed to read file %s\n", filename);
+		return 0;
+	}
 
-    // obtain file size:
-    int32_t fileSize=orbisLseek(pFile,0,SEEK_END);
+	// obtain file size:
+	int32_t fileSize=orbisLseek(pFile,0,SEEK_END);
 	orbisLseek(pFile,0,SEEK_SET);  // Seek back to start
 	if(fileSize<0)
 	{
-        debugNetPrintf(DEBUG,"[ORBISGL] Failed to read size of file %s\n", filename);
-        orbisClose(pFile);
+		debugNetPrintf(DEBUG,"[ORBISFILE] Failed to read size of file %s\n", filename);
+		orbisClose(pFile);
 		return NULL;
 	}
-	
-    char* pText=malloc(sizeof(char)*fileSize+1);
-    if(!pText)
-        return 0;
 
-    if(orbisRead(pFile,pText,fileSize)!=fileSize)
-    {
-        debugNetPrintf(DEBUG,"[ORBISGL] Failed to read content of file %s\n", filename);
-        orbisClose(pFile);
-        free(pText);
-        return 0;
-    }
+	char* pText=malloc(sizeof(char)*fileSize+1);
+	if(!pText)
+	{
+		debugNetPrintf(DEBUG,"[ORBISFILE] Failed to allocate %db\n", fileSize+1);
+		orbisClose(pFile);
+		return 0;
+	}
+
+	if(orbisRead(pFile,pText,fileSize)!=fileSize)
+	{
+		debugNetPrintf(DEBUG,"[ORBISFILE] Failed to read content of file %s\n", filename);
+		orbisClose(pFile);
+		free(pText);
+		return 0;
+	}
 	orbisClose(pFile);
-    // add null terminator to string
-    pText[fileSize] = 0;
 
-    _orbisFile_lastopenFile_size = fileSize;  // now we update exported variable
+	// add null terminator to string
+	pText[fileSize] = 0;
 
-    return pText;
+	_orbisFile_lastopenFile_size = fileSize;  // now we update exported variable
+
+	return pText;
 }
 void orbisFileFinish()
 {
@@ -345,5 +349,3 @@ int orbisFileInit()
 	orbisfile_initialized=1;
 	return orbisfile_initialized;
 }
-	
-	
