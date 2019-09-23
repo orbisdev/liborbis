@@ -200,7 +200,7 @@ void updateController()
 }
 void finishApp()
 {
-    FT_end();
+	FT_end();
 	orbisAudioFinish();
 	orbisPadFinish();
 	
@@ -228,9 +228,8 @@ void initApp()
 	
 	if(ret==1)
 	{
-		
-	    confPad=orbisPadGetConf();
-	
+		confPad=orbisPadGetConf();
+
 		ret=orbis2dInitWithConf(myConf->conf);
 		
 		
@@ -274,7 +273,7 @@ int main(int argc, char *argv[])
 	Mod_Init(0);
 	ret = Mod_Load("host0:main.mod");
 	if(ret)
-	   Mod_Play();
+		Mod_Play();
 
 	orbisAudioResume(0);
 	
@@ -288,12 +287,13 @@ int main(int argc, char *argv[])
 	
 	rr();
 
-	char *msg[4] = { "hello from a simple shader, but using AVX on CPU", 
+	char *msg[5] = { "hello from a simple shader, but using AVX on CPU", 
 	                 "this is a raster implementation",
+	                 "go Lightning Modz go ;-)",
 	                 "#liborbis: where sources awaits",
 	                 "GLSL -> raster graphic :facepalm:" };
-    uint m = 0;
-    	
+	uint m = 0;
+
 	while(flag)
 	{
 		//capture pad data and populate positions
@@ -330,9 +330,9 @@ int main(int argc, char *argv[])
 
         // draw text with freetype
         FT_print_text(400, 300, msg[m]);
-        
-        if(flipArg > 30) { add_angle(); }
-        
+
+        if(flipArg > 60) { add_angle(); }
+
         if(flipArg % 60 == 0) {
             m += 1;
             if(m > 3) m = 0;
