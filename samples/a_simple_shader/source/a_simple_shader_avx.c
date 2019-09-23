@@ -30,7 +30,7 @@ static float Time = 0.f;
 /*uniform vec2 mouse; */
 
 static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
-static       vec4 gl_FragColor;
+//static       vec4 gl_FragColor;
 
 
 #include <immintrin.h>    // oh, yes!
@@ -70,7 +70,7 @@ void glsl_e57400_avx( void )
 
     short w, h;
     __m256 __attribute__((aligned(32))) px, t1, t2;
-    float  __attribute__((aligned(32))) R[8], G[8], B[8];
+    //float  __attribute__((aligned(32))) R[8], G[8], B[8];
 
     for(h=0; h < ATTR_HEIGHT; h++) // each row in the framebuffer
     {
@@ -131,7 +131,7 @@ void glsl_e57400_avx( void )
             px = _mm256_mul_ps(px, _mm256_set1_ps( 0xFF ));
 
             // _mm_storer_ps(B, px);  // in reverse order
-            memcpy(&B, &px, sizeof(__m256));
+            //memcpy(&B, &px, sizeof(__m256));
 
             /* 0.2 * dy, dy */
             t1 = _mm256_set1_ps( 0.2 ),  t1 = _mm256_mul_ps(t1, t2);   // * dy
@@ -140,26 +140,32 @@ void glsl_e57400_avx( void )
             t1 = _mm256_mul_ps(t1, _mm256_set1_ps( 0xFF ));
 
             // _mm_storer_ps(G, t1),                 // in reverse order
-            memcpy(&G, &t1, sizeof(__m256));
+            //memcpy(&G, &t1, sizeof(__m256));
 
             /* clamp 0.f-1.f */
             t2 = _mm256_min_ps( _mm256_max_ps(t2, _mm256_set1_ps( 0. )), _mm256_set1_ps( 1.f ) ); // x8 B
             t2 = _mm256_mul_ps(t2, _mm256_set1_ps( 0xFF ));
 
             // _mm_storer_ps(R, t2);                 // in reverse order
-            memcpy(&R, &t2, sizeof(__m256));
+            //memcpy(&R, &t2, sizeof(__m256));
 
             /* unpack, compose pixel (x8) colors */
             for(int i=0; i<8; i++)
             {
-                 gl_FragColor = (vec4){ B[i], G[i], R[i], 2.0 };
+                 //gl_FragColor = (vec4){ B[i], G[i], R[i], 2.0 };
                  /*printf("color = 0x%.8X\n", ARGB(0xFF, (unsigned char)(0xFF * gl_FragColor.r),
                                                          (unsigned char)(0xFF * gl_FragColor.g),
                                                          (unsigned char)(0xFF * gl_FragColor.b)));*/
                  /* paint pixel */
-                 orbis2dDrawPixelColor(w *8 +i, h, ARGB(0xFF, (unsigned char)(gl_FragColor.r),
+                 /*orbis2dDrawPixelColor(w *8 +i, h, ARGB(0xFF, (unsigned char)(gl_FragColor.r),
                                                               (unsigned char)(gl_FragColor.g),
-                                                              (unsigned char)(gl_FragColor.b)));
+                                                              (unsigned char)(gl_FragColor.b)));*/
+                 float* r = (float*)&t2;
+                 float* g = (float*)&t1;
+                 float* b = (float*)&px;
+                 orbis2dDrawPixelColor(w *8 +i, h, ARGB(0xFF, (unsigned char)(b[i]),
+                                                              (unsigned char)(g[i]),
+                                                              (unsigned char)(r[i])));
             }
             gl_FragCoord.x += step.x *8; // advance X *8
         }

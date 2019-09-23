@@ -307,7 +307,6 @@ int main(int argc, char *argv[])
 		orbis2dStartDrawing();
 
 		// clear the current display buffer
-		orbis2dClearBuffer(0);  // uses cached dumpBuf
 
 		if(refresh)	// draw the background image
 		{
@@ -319,6 +318,10 @@ int main(int argc, char *argv[])
 			orbis2dDumpBuffer(), refresh = 0;  // save dumpBuf
 			debugNetPrintf(DEBUG,"orbis2dDumpBuffer()\n");
 		}
+		else
+		{
+		  //orbis2dClearBuffer(0);  // uses cached dumpBuf
+    }
 
     /* test shader math */
     // glsl_e57400();
@@ -357,10 +360,10 @@ int main(int argc, char *argv[])
 	Mod_End();
 
 	//wait for current display buffer
-	orbis2dStartDrawing();
+	//orbis2dStartDrawing();
 
 	// clear with background (default white) to the current display buffer 
-	orbis2dClearBuffer(1);
+	//orbis2dClearBuffer(1);
 					
 	//flush and flip
 	orbis2dFinishDrawing(flipArg);
