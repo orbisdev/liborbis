@@ -12,7 +12,8 @@
 #include <string.h>
 
 #ifdef __PS4__
-#include <orbis2d.h>  // orbis2dDrawPixelColor()
+#include <orbis2d.h>  // ATTR_*
+extern Orbis2dConfig *orbconf;  // hook main 2d conf to get framebuffer address
 #else
 #include "pixel.h"         // SDL bindings: hook the SDL_surface from main() with init_pixel_SDL()
 #include "orbisXbmFont.h"  // ARGB
@@ -64,6 +65,9 @@ static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
 /* SSE2 implementation */
 void glsl_e57400_sse( void )
 {
+    //Time = 0.f;
+    register uint32_t *pixel = (uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer];
+
     register vec2 gl_FragCoord = { 0, 1 };  // draw from upperleft
     const    vec2 step         = (vec2)( 1. /resolution );
 
@@ -73,6 +77,8 @@ void glsl_e57400_sse( void )
 
     for(h=0; h < ATTR_HEIGHT; h++) // each row in the framebuffer
     {
+        #pragma clang loop unroll_count(8)
+
         for(w=0; w < ATTR_WIDTH /4; w++) // each horizontal 4 pixels in (h) row
         {
          /* px = gl_FragCoord.x - 0.5; but for (x4) pixels */
@@ -168,9 +174,12 @@ void glsl_e57400_sse( void )
                  float* r = (float*)&t2;
                  float* g = (float*)&t1;
                  float* b = (float*)&px;
-                 orbis2dDrawPixelColor(w *4 +i, h, ARGB(0xFF, (unsigned char)(b[i]),
+                 /*orbis2dDrawPixelColor(w *4 +i, h, ARGB(0xFF, (unsigned char)(b[i]),
                                                               (unsigned char)(g[i]),
-                                                              (unsigned char)(r[i])));
+                                                              (unsigned char)(r[i])));*/
+                 *pixel++ = ARGB(0xFF, (unsigned char)(b[i]),
+                                       (unsigned char)(g[i]),
+                                       (unsigned char)(r[i]));
             }
             gl_FragCoord.x += step.x *4; // advance X *4
         }
