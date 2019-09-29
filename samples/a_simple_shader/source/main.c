@@ -54,6 +54,11 @@ static void rr()  // randomize rect
 	rcolor = ARGB(0xFF, rand()%256, rand()%256, rand()%256);
 }
 
+// about shader variants
+#define NUM_OF_VARIANTS  (3)
+int variant = 0;
+
+
 void updateController()
 {
 	int ret;
@@ -114,7 +119,7 @@ void updateController()
 			{
 				y=conf->height-1-step;
 			}
-		}						
+		}
 		if(orbisPadGetButtonPressed(ORBISPAD_RIGHT) || orbisPadGetButtonHold(ORBISPAD_RIGHT))
 		{
 			debugNetPrintf(DEBUG,"Right pressed\n");
@@ -163,6 +168,8 @@ void updateController()
 			B=rand()%256;
 			color=0x80000000|R<<16|G<<8|B;
 			//orbisAudioStop();
+			variant += 1;
+			debugNetPrintf(DEBUG,"variant:%d\n", variant %NUM_OF_VARIANTS);
 		}
 		if(orbisPadGetButtonPressed(ORBISPAD_SQUARE))
 		{
@@ -276,7 +283,7 @@ int main(int argc, char *argv[])
 		Mod_Play();
 
 	orbisAudioResume(0);
-	
+
 	// define text fading colors
 	c1 = 0xFFFF22AA;
 	c2 = 0xFF221133;
@@ -287,11 +294,18 @@ int main(int argc, char *argv[])
 	
 	rr();
 
-	char *msg[5] = { "hello from a simple shader, but using AVX on CPU", 
+	char *msg[7] = {
+	                 "hello from a simple shader,",
+	  #ifdef USE_SSE2
+	                 "but using SSE2 on CPU",
+	  #else
+	                 "but using AVX on CPU",
+	  #endif
 	                 "this is a raster implementation",
 	                 "go Lightning Modz go ;-)",
 	                 "#liborbis: where sources awaits",
-	                 "GLSL -> raster graphic :facepalm:" };
+	                 "GLSL -> raster graphic :facepalm:",
+	                 "this very long text line should slowdown raster!" };
 	uint m = 0;
 
 	while(flag)
@@ -320,24 +334,28 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-		  //orbis2dClearBuffer(0);  // uses cached dumpBuf
+			//orbis2dClearBuffer(0);  // uses cached dumpBuf
     }
 
-    /* test shader math */
-    // glsl_e57400();
-    // glsl_e57400_sse();
-       glsl_e57400_avx();
+		/* test shader math */
+		// glsl_e57400();
 
-        // draw text with freetype
-        FT_print_text(400, 300, msg[m]);
+		#ifdef USE_SSE2
+		  glsl_e57400_sse(variant %NUM_OF_VARIANTS);
+		#else
+		  glsl_e57400_avx(variant %NUM_OF_VARIANTS);
+		#endif
 
-        if(flipArg > 60) { add_angle(); }
+		// draw text with freetype
+		FT_print_text(400, 300, msg[m]);
 
-        if(flipArg % 60 == 0) {
-            m += 1;
-            if(m > 3) m = 0;
-            debugNetPrintf(DEBUG,"flipArg %d, m:%d\n", flipArg, m);
-        }
+		if(flipArg > 60) { add_angle(); }
+
+		if(flipArg % (60*4) == 0) {
+			m += 1;
+			if(m > 6) m = 0;
+			debugNetPrintf(DEBUG,"flipArg %d, m:%d\n", flipArg, m);
+		}
 
 		// draw text with Xbm_Font
 		//print_text(tx, ATTR_HEIGHT /2, tmp_ln);
