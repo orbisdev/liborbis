@@ -31,7 +31,7 @@ static float Time = 0.f;
 
 static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
 //static       vec4 gl_FragColor;
-
+static const vec2 __attribute__((aligned(16))) step = { 1. /ATTR_WIDTH, 1. /ATTR_HEIGHT };
 
 #include <immintrin.h>    // oh, yes!
 #include "sse_mathfun.h"  // sin_ps()
@@ -63,44 +63,69 @@ static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
 #define phase 2.5
 
 /* SSE2 implementation */
-void glsl_e57400_sse( void )
+void glsl_e57400_sse( int variant )
 {
     //Time = 0.f;
     register uint32_t *pixel = (uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer];
 
     register vec2 gl_FragCoord = { 0, 1 };  // draw from upperleft
     const    vec2 step         = (vec2)( 1. /resolution );
+    
+    register int __attribute__((aligned(16))) w, h;
+    __m128 __attribute__((aligned(16))) px, t1, t2;
+    __m128 __attribute__((aligned(16))) _speed, _freq, _amp, _phase;
+    __m128 __attribute__((aligned(16))) _v1, _v2, _v3, _v4, _v5, _v6, _v7;
 
-    short w, h;
-    __m128 __attribute__((aligned(32))) px, t1, t2;
-    //float  __attribute__((aligned(32))) R[4], G[4], B[4];
+    switch( variant )
+    {
+      case 2: /* http://glslsandbox.com/e#57659.0 */
+        _speed = _mm_set1_ps( 0.3 ),    _freq  = _mm_set1_ps( 0.8 );
+        _amp   = _mm_set1_ps( 0.9 ),    _phase = _mm_set1_ps( 2.5 );
+        _v1    = _mm_set1_ps( 1.2 ),    _v2    = _mm_set1_ps( 5.0 );
+        _v3    = _mm_set1_ps( 6.0 ),    _v4    = _mm_set1_ps( 43.0 );
+        _v5    = _mm_set1_ps( 0.025 ),  _v6    = _mm_set1_ps( 90.0 );
+        _v7    = _mm_set1_ps( 0.05 );   break;
+      case 1: /* http://glslsandbox.com/e#57444.0 */
+        _speed = _mm_set1_ps( 0.2 ),    _freq  = _mm_set1_ps( 0.7 );
+        _amp   = _mm_set1_ps( 0.5 ),    _phase = _mm_set1_ps( 0.5 );
+        _v1    = _mm_set1_ps( 1.2 ),    _v2    = _mm_set1_ps( 9.0 );
+        _v3    = _mm_set1_ps( 3.5 ),    _v4    = _mm_set1_ps( 100.0 );
+        _v5    = _mm_set1_ps( 0.05 ),   _v6    = _mm_set1_ps( 90.0 );
+        _v7    = _mm_set1_ps( 0.2 );    break;
+      case 0: /* http://glslsandbox.com/e#57400.0 */
+        _speed = _mm_set1_ps( speed ),  _freq  = _mm_set1_ps( freq );
+        _amp   = _mm_set1_ps( amp ),    _phase = _mm_set1_ps( phase );
+        _v1    = _mm_set1_ps( 1.9 ),    _v2    = _mm_set1_ps( 4.0 );
+        _v3    = _mm_set1_ps( 6.0 ),    _v4    = _mm_set1_ps( 43.0 );
+        _v5    = _mm_set1_ps( 0.5 ),    _v6    = _mm_set1_ps( 60.0 );
+        _v7    = _mm_set1_ps( 0.2 );    break;
+    }
 
+    #pragma clang loop unroll(disable)
     for(h=0; h < ATTR_HEIGHT; h++) // each row in the framebuffer
     {
-        #pragma clang loop unroll_count(8)
-
+        #pragma clang loop unroll_count(4)
         for(w=0; w < ATTR_WIDTH /4; w++) // each horizontal 4 pixels in (h) row
         {
          /* px = gl_FragCoord.x - 0.5; but for (x4) pixels */
-            px = _mm_set_ps(gl_FragCoord.x - 0.5 + step.x *3,
-                            gl_FragCoord.x - 0.5 + step.x *2, 
-                            gl_FragCoord.x - 0.5 + step.x *1,
-                            gl_FragCoord.x - 0.5 + step.x *0);  // load in reverse order
+            px = _mm_set_ps(gl_FragCoord.x - 0.5 + step.x *3, gl_FragCoord.x - 0.5 + step.x *2, 
+                            gl_FragCoord.x - 0.5 + step.x *1, gl_FragCoord.x - 0.5 + step.x *0);
+                            // load in reverse order
 
          /* sx = (amp)*1.9 * sin( 4.0 * (freq) * (p.x-phase) - 6.0 * (speed)*Time); */
 
-            t1 = _mm_set1_ps( phase );      // splat phase
-            t1 = _mm_sub_ps(px, t1);        // t1 = (p.x-phase)
-
-            t2 = _mm_set1_ps( 4.0*freq );   // splat a const
+            t1 = _mm_sub_ps(px, _phase);    // t1 = (p.x-phase)
+            t2 = _mm_mul_ps(_v2, _freq);    // t2 = 4.0 * freq
             t2 = _mm_mul_ps(t2, t1);        // t2 = 4.0 * freq * (p.x-phase)
 
-            t1 = _mm_set1_ps( 6.0*(speed)*Time );
+            t1 = _mm_set1_ps( Time );
+            t1 = _mm_mul_ps(t1, _v3);
+            t1 = _mm_mul_ps(t1, _speed);
             t1 = _mm_sub_ps(t2, t1);        // t1 = 4.0 * freq * (p.x-phase) - 6.0 * (speed)*Time
 
             t2 = sin_ps(t1);
 
-            t1 = _mm_set1_ps( (amp)*1.9 );
+            t1 = _mm_mul_ps(_v1, _amp );
             t2 = _mm_mul_ps(t1, t2);        // t2 = (amp)*1.9 * sin()
 
             /*if(w==2 && h==10) {
@@ -118,15 +143,15 @@ void glsl_e57400_sse( void )
 
          /* dy = 43./ ( 60. * fabs(4.9*p.y - sx - 1.2)); */
  
-            t1 = _mm_set1_ps( 4.9*(gl_FragCoord.y - 0.5) ),
+            t1 = _mm_set1_ps( 4.9*(gl_FragCoord.y - 0.25) ),
             t1 = _mm_sub_ps(t1, t2);                            // t1 = 4.9*p.y - sx
             t2 = _mm_set1_ps( 1.2 ),  t1 = _mm_sub_ps(t1, t2);  // 4.9*p.y - sx - 1.2
 
             /* "The maximum of -x and x should be abs(x)." */
             t2 = _mm_max_ps(_mm_sub_ps(_mm_setzero_ps(), t1), t1); // fabs( 4.9*p.y - sx - 1.2 )
 
-            t1 = _mm_set1_ps( 60. ),  t2 = _mm_mul_ps(t1, t2);  // 60. * fabs(4.9*p.y - sx - 1.2));
-            t1 = _mm_set1_ps( 43. ),  t2 = _mm_div_ps(t1, t2);  // 43./ ( 60. * fabs(4.9*p.y - sx - 1.2))
+            t2 = _mm_mul_ps(_v6, t2);  // 60. * fabs(4.9*p.y - sx - 1.2));
+            t2 = _mm_div_ps(_v4, t2);  // 43./ ( 60. * fabs(4.9*p.y - sx - 1.2))
 
          /* gl_FragColor = (vec4){ (p.x + 0.5) * dy, 0.2 * dy, dy, 2.0 }; */
 
@@ -135,20 +160,20 @@ void glsl_e57400_sse( void )
                mul(256) to get 0-255 channels color, as u8 */
             
             /* (p.x + 0.5) * dy */
-            t1 = _mm_set1_ps( 0.5 ),  px = _mm_add_ps(px, t1);
-                                      px = _mm_mul_ps(px, t2);   // * dy
+            px = _mm_add_ps(px, _v5);
+            px = _mm_mul_ps(px, t2);   // * dy
             /* clamp 0.f-1.f */
-             px = _mm_min_ps( _mm_max_ps(px, _mm_set1_ps(0.)), _mm_set1_ps(1.f) ); // x4 R
-             px = _mm_mul_ps(px, _mm_set1_ps( 0xFF ));
+            px = _mm_min_ps( _mm_max_ps(px, _mm_set1_ps(0.)), _mm_set1_ps(1.f) ); // x4 R
+            px = _mm_mul_ps(px, _mm_set1_ps( 0xFF ));
 
             // _mm_storer_ps(B, px);  // in reverse order
             //memcpy(&B, &px, sizeof(__m128));
 
             /* 0.2 * dy, dy */
-            t1 = _mm_set1_ps( 0.2 ),  t1 = _mm_mul_ps(t1, t2);   // * dy
+            t1 = _mm_mul_ps(_v7, t2);   // * dy
             /* clamp 0.f-1.f */
-             t1 = _mm_min_ps( _mm_max_ps(t1, _mm_set1_ps( 0. )), _mm_set1_ps( 1.f ) ); // x4 G
-             t1 = _mm_mul_ps(t1, _mm_set1_ps( 0xFF ));
+            t1 = _mm_min_ps( _mm_max_ps(t1, _mm_set1_ps( 0. )), _mm_set1_ps( 1.f ) ); // x4 G
+            t1 = _mm_mul_ps(t1, _mm_set1_ps( 0xFF ));
 
             // _mm_storer_ps(G, t1),                 // in reverse order
             //memcpy(&G, &t1, sizeof(__m128));
@@ -161,6 +186,7 @@ void glsl_e57400_sse( void )
             //memcpy(&R, &t2, sizeof(__m128));
 
             /* unpack, compose pixel (x4) colors */
+            #pragma clang loop unroll_count(4)
             for(int i=0; i<4; i++)
             {
                  //gl_FragColor = (vec4){ B[i], G[i], R[i], 2.0 };

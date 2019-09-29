@@ -126,10 +126,11 @@ static void draw_bitmap( FT_Bitmap *bitmap, FT_Int x, FT_Int y)      // glyph re
 
     for(i = x, p = 0; i < x_max; i++, p++ )     
     {
+        if(i < 0 || i >= ATTR_WIDTH) continue;
+
         for(j = y, q = 0; j < y_max; j++, q++ )     
         {
-            if(i < 0           || j < 0 
-            || i >= ATTR_WIDTH || j >= ATTR_HEIGHT ) continue;
+            if(j < 0 || j >= ATTR_HEIGHT ) continue;
         
             //image[j][i] |= bitmap->buffer[q * bitmap->width + p];
             c = bitmap->buffer[q * bitmap->width + p];
@@ -245,8 +246,8 @@ void FT_init()
         debugNetPrintf(DEBUG,"FT_New_Memory_Face return:\t%d, face at:\t%p\n", error, face);
     }
   
-    /* use 16pt at 100dpi */
-    error = FT_Set_Char_Size( face, 16 * 64, 0, 100, 0 );    /* set character size */
+    /* use 10pt at 100dpi */
+    error = FT_Set_Char_Size( face, 10 * 64, 0, 100, 0 );    /* set character size */
     /* error handling omitted */
     debugNetPrintf(DEBUG,"FT_Set_Char_Size return:\t%d\n", error);
       
