@@ -269,19 +269,16 @@ static void mp3dec_read_chunk(mp3dec_map_info_t *map_info, int pos)
     readed += ret;
 
     if(ret < SIZE)  // if EOF before filling current chunk
-    {
-       // file endeds
-       debugNetPrintf(INFO,"reached EOF\n");
-    }
-    num++;
+        debugNetPrintf(INFO,"reached EOF\n");
+    else
+        num++;
 
-    debugNetPrintf(INFO,"num: %d, %zub, %zub, total: %zub, remain: %zub (%f)\n",
+    debugNetPrintf(INFO,"chunk: %d, readed: %zub, total: %zub, remain: %zub (%.2f%)\n",
                           num,
-                          num * SIZE,
                           readed,
                           map_info->size,
-                          map_info->size - num * SIZE,
-                          (double)(num / (map_info->size /SIZE)));
+                          map_info->size - readed,
+                          ((double)readed / (double)(map_info->size)) *100);
     return;
 }
 #endif // CHUNKED_READS

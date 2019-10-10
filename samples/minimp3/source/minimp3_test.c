@@ -159,7 +159,7 @@ static int frames_iterate_cb(void *user_data, const uint8_t *frame, int frame_si
     }
     if(numframe %200 == 0) { debugNetPrintf(INFO,"fill now: %d, free: %lu\n\n", fill, sizeof(play_buf) - (fill * 2)); }
 
-    sceKernelUsleep(100000);
+    //sceKernelUsleep(100000);
 
     return 0;
 }
@@ -268,7 +268,7 @@ static void minimp3_PlayCallback(OrbisAudioSample *_buf2, unsigned int length,vo
     // wait for last data
     sceAudioOutOutput(handle, NULL);
 
-    sceKernelUsleep(100000);
+    //sceKernelUsleep(100000);
 }
 
 

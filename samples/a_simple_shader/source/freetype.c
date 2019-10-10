@@ -4,22 +4,30 @@
  * masterzorag@gmail.com
  */
 
-#include "freetype.h"
+#include <ps4link.h>
+#include <math.h>       // sinf, cosf
+#include <sys/fcntl.h>  // O_RDONLY
+#include <orbis2d.h>
 extern Orbis2dConfig *orbconf;  // hook main 2d conf to get framebuffer address
 static uint32_t __attribute__((aligned(16))) *pixel = NULL;
 
+///TTF
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 static FT_Library library;
 static FT_Face    face = NULL;
 static FT_Byte *buffer = NULL;  // stores ttf font data
-
+static size_t   bufsize;
 
 /* precomputed gradient colors [0-7] */
-#define SIMPLE_GRADIENT_STEPS  (8)
-static uint32_t fading_color[SIMPLE_GRADIENT_STEPS];
+#define SIMPLE_GRADIENT_STEPS 8
+/*static uint32_t fading_color[8] = { 0xFFFF0000, 0xFF0000FF, 0xFFFF0000, 0xFF0000FF,
+                                      0xFFFF0000, 0xFF0000FF, 0xFFFF0000, 0xFF0000FF };*/
+static uint32_t fading_color[SIMPLE_GRADIENT_STEPS];  // precomputed gradient [0-7]
 
-static uint32_t c1 = 0xFFFFFFFF,
-                c2 = 0xFF404040;
+static uint32_t c1 = 0xFFFF0000,
+                c2 = 0xFF0000FF;
 
 /***********************************************************************
 * simple gradient (ARGB)
@@ -65,10 +73,51 @@ void FT_update_gradient(const uint32_t *a, const uint32_t *b)
 }
 
 
+// can be a default wrapper!
+// returned buffer must be free(): actually in FT_end()
+static uint8_t *buffer_from_host(const char *path, size_t *ret_size)
+{
+	int fd;             // descriptor to manage file from host0
+	int filesize;       // variable to control file size
+	uint8_t *buf=NULL;  // buffer for read from host0 file
+    *ret_size = 0;      // each time we refresh it
+
+	// we open file in read only from host0 ps4sh include the full path with host0:/.......
+	fd=ps4LinkOpen(path,O_RDONLY,0);
+
+	if(fd<0)  //If we can't open file from host0 print  the error and return
+	{
+		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkOpen returned error %d\n",fd);
+		return NULL;
+	}
+	filesize=ps4LinkLseek(fd,0,SEEK_END);  // Seek to final to get file size
+	if(filesize<0)                         // If we get an error print it and return
+	{
+		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkSeek returned error %d\n",fd);
+		ps4LinkClose(fd);
+		return NULL;
+	}
+
+	ps4LinkLseek(fd,0,SEEK_SET);  //Seek back to start
+	buf=malloc(filesize);         //Reserve  memory for read buffer
+
+	int numread=ps4LinkRead(fd,buf,filesize);  //Read filsesize bytes to buf
+	ps4LinkClose(fd);  //Close file
+
+	if(numread!=filesize)                      //if we don't get filesize bytes we are in trouble
+	{
+		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkRead returned error %d\n",numread);
+		return NULL;
+	}
+
+	*ret_size = filesize;
+	return buf;
+}
+
 /* internally draw via liborbis2d */
 static void draw_bitmap(FT_Bitmap *bitmap, FT_Int x, FT_Int y) // glyph refs
 {
-    uint32_t pixelColor = 0xFF000000;
+    //uint32_t pixelColor = 0xFF000000;
     uint8_t c;
 
     FT_Int i, j, p, q;
@@ -92,21 +141,13 @@ static void draw_bitmap(FT_Bitmap *bitmap, FT_Int x, FT_Int y) // glyph refs
             /* we can do better about color */
             if(c > 0
             && c < 0x80) {
-                pixelColor = ARGB(0xFF, c, c, c);
-                /*pixelColor=(c + 1)<<24  //R
-                          |(c + 1)<<16  //G
-                          |(c + 1)<<8   //B
-                          |0xFF;*/
-
-                orbis2dDrawPixelColor(i, j, pixelColor);
+                //pixelColor = ARGB(0xFF, c, c, c);
+                //orbis2dDrawPixelColor(i, j, 0xFF808080);
+                pixel[j * ATTR_WIDTH + i] = 0xFF808080;
             } else if(c > 0x80) {
                 //pixelColor = ARGB(0xFF, 0x10 + c + q*2, 0x10 + c + q*2, 0x10 + c + q*2);
-                /*pixelColor=(c - q*1)<<24  //R
-                          |(c - q*5)<<16  //G
-                          |(c - q*1)<<8   //B
-                          |0xFF;*/
-                //orbis2dDrawPixelColor(i, j, pixelColor);
-                orbis2dDrawPixelColor(i, j, fading_color[q /3]);
+                //orbis2dDrawPixelColor(i, j, fading_color[q /3]);
+                pixel[j * ATTR_WIDTH + i] = fading_color[q /3];
             }
         }
     }
@@ -127,14 +168,15 @@ void add_angle(void)
 }
 
 /* new glyph sequence loader */
-typedef int v2i __attribute__((ext_vector_type(2)));
+#include <pthread.h>
+pthread_mutex_t lock;
 
-// we save (rendered) last text length in pixel, to align center/right
-static v2i baseline;
-
-static v2i FT_loop_text(uint dst_x, uint dst_y, const char *text, int render_or_not)
+// print from main() or some pthread
+void FT_print_text(uint dst_x, uint dst_y, const char *text)
 {
-    if(!face) return 0;
+    if(!face) return;
+
+    pthread_mutex_lock(&lock);
 
     int num_chars = strlen(text);
     FT_GlyphSlot  slot = face->glyph;   /* a small shortcut */
@@ -166,67 +208,25 @@ static v2i FT_loop_text(uint dst_x, uint dst_y, const char *text, int render_or_
         FT_Load_Char( face, text[n], FT_LOAD_RENDER );
         /* ignore errors */
 
-        if(render_or_not)
-        {
-            /* now, draw to our target surface (convert position) */
-            draw_bitmap(&slot->bitmap,
-                         slot->bitmap_left,
-                         ATTR_HEIGHT - slot->bitmap_top);
-        }
+        /* now, draw to our target surface (convert position) */
+        draw_bitmap(&slot->bitmap,
+                     slot->bitmap_left,
+                     ATTR_HEIGHT - slot->bitmap_top);
+
         /* increment pen position */
         pen.x += slot->advance.x;
         pen.y += slot->advance.y;
         //debugNetPrintf(DEBUG,"[%d] %d %d %d %d\n", n, slot->bitmap_left, slot->bitmap_top, pen.x /64, pen.y /64);
     }
-
-    /* save text length in pixel */
-    if(!render_or_not) {
-        baseline.x = (pen.x - dst_x * 64) /64;
-        baseline.y = (pen.y - (ATTR_HEIGHT - dst_y) * 64) /64;
-        //debugNetPrintf(DEBUG,"baseline, x: %d\ty: %d\n", baseline.x, baseline.y);
-    } else {
-        /* now we can also underline text! */
-        /* disabled!
-        orbis2dDrawLineColor(dst_x, dst_y, dst_x + baseline.x, dst_y - baseline.y, 0xFFFF0000);  // red
-        */
-    }
-
-    return baseline;
+    pthread_mutex_unlock(&lock);
 }
 
-/* facilities */
 
-int FT_get_text_lenght(uint dst_x, uint dst_y, const char *text)
-{
-    v2i res = FT_loop_text(dst_x, dst_y, text, 0);  // pass 1: compute lenght
-    //printf("res: %d, %d\n", res.x, res.y);
-    return res.x;
-}
-
-/* print from main() */
-void FT_print_text(uint dst_x, uint dst_y, const char *text)
-{
-    FT_loop_text(dst_x, dst_y, text, 1);  // pass 2: render text
-}
-
-void FT_set_text_angle(double new_angle)
-{
-    angle = new_angle;
-}
-
-/* set character size */
-void FT_set_text_size(int pt, int dpi)
-{
-    FT_Error error = FT_Set_Char_Size( face, pt * 64, 0, dpi, 0 );
-    /* error handling omitted */
-    if(error)
-        debugNetPrintf(DEBUG,"FT_Set_Char_Size return:\t%d\n", error);
-}
-
-/* initialize library,
-   create face object,
-   set character size */
-void FT_init(void)
+// init freetype
+/*... initialize library ...
+... create face object ...
+... set character size ...*/
+void FT_init()
 {
     FT_update_gradient(&c1, &c2);
 
@@ -238,35 +238,83 @@ void FT_init(void)
     debugNetPrintf(DEBUG,"FT_Init_FreeType return:\t%d, library at %p\n", error, library);
 
     /* load default font */
-    if(!buffer) buffer = orbisFileGetFileContent("host0:zrnic_rg.ttf");
+    if(!buffer) buffer = buffer_from_host("host0:main.ttf", &bufsize);
 
     if(!buffer) return;
     // passed, report
-    debugNetPrintf(DEBUG,"data buffer at %p, size %u\n", buffer, _orbisFile_lastopenFile_size);
+    debugNetPrintf(DEBUG,"data buffer at %p, size %u\n", buffer, bufsize);
 
     /* create face object */
     if(!face)
     {
         error = FT_New_Memory_Face( library,
-                                    buffer,                         /* first byte in memory */
-                                    _orbisFile_lastopenFile_size,   /* size in bytes        */
-                                    0,                              /* face_index           */
+                                    buffer,    /* first byte in memory */
+                                    bufsize,   /* size in bytes        */
+                                    0,         /* face_index           */
                                     &face );
         /* error handling omitted */
         debugNetPrintf(DEBUG,"FT_New_Memory_Face return:\t%d, face at:\t%p\n", error, face);
     }
 
-    /* use 16pt at 100dpi */
-    FT_set_text_size(16, 100);
-
-    FT_set_text_angle(0.0);
+    /* use 14pt at 100dpi */
+    error = FT_Set_Char_Size( face, 14 * 64, 0, 100, 0 );    /* set character size */
+    /* error handling omitted */
+    debugNetPrintf(DEBUG,"FT_Set_Char_Size return:\t%d\n", error);
 
     /* cmap selection omitted;                                        */
     /* for simplicity we assume that the font contains a Unicode cmap */
 
-    sleep(1);
+    if(pthread_mutex_init(&lock, NULL) != 0)
+    {
+        debugNetPrintf(ERROR,"\n mutex init failed\n");
+    }
 
+    // return NOW, follows an example
     return;
+
+// from example1
+  char*         text = "hella";
+  int           n, num_chars;
+  num_chars     = strlen( text );
+
+  int target_height = ATTR_HEIGHT;  
+
+  FT_GlyphSlot  slot;
+  slot = face->glyph;
+
+  FT_Vector     pen;                    /* untransformed origin  */
+  FT_Matrix     matrix;                 /* transformation matrix */
+  double        angle = ( 25.0 / 360 ) * 3.14159 * 2;      /* use 25 degrees     */
+  /* set up matrix */
+  matrix.xx = (FT_Fixed)( cosf( angle ) * 0x10000L );
+  matrix.xy = (FT_Fixed)(-sinf( angle ) * 0x10000L );
+  matrix.yx = (FT_Fixed)( sinf( angle ) * 0x10000L );
+  matrix.yy = (FT_Fixed)( cosf( angle ) * 0x10000L );
+
+  /* the pen position in 26.6 cartesian space coordinates; */
+  /* start at (100,200) relative to the upper left corner  */
+  pen.x = 100 * 64;
+  pen.y = ( target_height - 200 ) * 64;
+
+    for ( n = 0; n < num_chars; n++ )
+      {
+        /* set transformation */
+        FT_Set_Transform( face, &matrix, &pen );
+
+        /* load glyph image into the slot (erase previous one) */
+        error = FT_Load_Char( face, text[n], FT_LOAD_RENDER );
+        if ( error )
+          continue;                 /* ignore errors */
+
+        /* now, draw to our target surface (convert position) */
+        /*draw_bitmap(&slot->bitmap,
+                      slot->bitmap_left,
+                      target_height - slot->bitmap_top );*/
+
+        /* increment pen position */
+        pen.x += slot->advance.x;
+        pen.y += slot->advance.y;
+      }
 }
 
 
@@ -281,6 +329,8 @@ void FT_end(void)
     error = FT_Done_FreeType( library );
     debugNetPrintf(DEBUG,"FT_Done_FreeType return:\t%d\n", error);
 
-    // release data buffer (readed from HOST0:)
+    pthread_mutex_destroy(&lock);
+
+    // release data buffer (readed from host0)
     if(buffer) { free(buffer), buffer = NULL; }
 }

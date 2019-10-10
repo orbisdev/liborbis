@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>  // sleep()
 #include <kernel.h>
 #include <audioout.h>
 #include <debugnet.h>
@@ -156,7 +157,7 @@ int orbisAudioInitWithConf(OrbisAudioConfig *conf)
 int orbisAudioPlayBlock(unsigned int channel,unsigned int vol1,unsigned int vol2,void *buf)
 {
 
-	int vols[2]={vol1,vol2};	
+	//int vols[2]={vol1,vol2};
 	if (channel > ORBISAUDIO_CHANNELS)
 	{
 		return 0;
@@ -188,12 +189,12 @@ void * orbisAudioChannelThread(void *argp)
 	OrbisAudioCallback callback=NULL;
 	unsigned int samples;
 	for(i=0;i<ORBISAUDIO_NUM_BUFFERS;i++)
-	{	
+	{
 				
 		memset(orbisAudioConf->channels[channel]->sampleBuffer[i],0,orbisAudioConf->channels[channel]->samples[i]*(orbisAudioConf->channels[channel]->stereo?sizeof(OrbisAudioStereoSample):sizeof(OrbisAudioMonoSample))*orbisAudioConf->channels[channel]->samples[i]);
 		
 	}
-	debugNetPrintf(DEBUG,"[orbisAudio] orbisAudioChannelThread %d  %d ready to have a lot of fun...\n",orbisAudioConf->orbisaudio_stop,orbisAudioConf->channels[channel]->paused);
+	debugNetPrintf(DEBUG,"[orbisAudio] orbisAudioChannelThread %d  %d ready to have a lot of fun!\n",orbisAudioConf->orbisaudio_stop,orbisAudioConf->channels[channel]->paused);
 	
 	while(!orbisAudioConf->orbisaudio_stop)
 	{
@@ -217,7 +218,7 @@ void * orbisAudioChannelThread(void *argp)
 					for (i=0;i<samples;i++)
 					{
 						*(bufStereo++)=0;
-					}			
+					}
 				}
 				else
 				{
@@ -238,6 +239,7 @@ void * orbisAudioChannelThread(void *argp)
 			/* Switch active buffer */
 			orbisAudioConf->channels[channel]->currentBuffer=(orbisAudioConf->channels[channel]->currentBuffer?0:1);
 		}
+		sceKernelUsleep(1000);
 	}
 	
 	debugNetPrintf(DEBUG,"[orbisAudio] orbisAudioChannelThread %d  exit...\n",orbisAudioConf->orbisaudio_stop);

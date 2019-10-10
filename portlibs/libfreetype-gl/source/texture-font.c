@@ -97,19 +97,17 @@ texture_font_load_face( FT_Library * library,
 
     if(!buffer) return 0;
 
-    // passed, report
-    debugNetPrintf(DEBUG,"data buffer at %p, size %u\n", buffer, _orbisFile_lastopenFile_size);
+    //debugNetPrintf(DEBUG,"data buffer at %p, size %u\n", buffer, _orbisFile_lastopenFile_size);
 
     /* create face object */
+  //error = FT_New_Face( *library, filename, 0, face );
     error = FT_New_Memory_Face( *library,
                                 buffer,                        /* first byte in memory */
                                 _orbisFile_lastopenFile_size,  /* size in bytes        */
                                 0,                             /* face_index           */
                                 face );
 
-    debugNetPrintf(DEBUG,"FT_New_Memory_Face from buffer at %p return:\t%d, face at:\t%p\n", buffer, error, face);
-
-    //error = FT_New_Face( *library, filename, 0, face );
+    //debugNetPrintf(DEBUG,"FT_New_Memory_Face from buffer at 0x%p return:\t%d, face at:\t0x%p\n", buffer, error, face);
 
     if( error )
     {
@@ -118,7 +116,6 @@ texture_font_load_face( FT_Library * library,
         FT_Done_FreeType( *library );
         return 0;
     }
-
 
     /* Select charmap */
     error = FT_Select_Charmap( *face, FT_ENCODING_UNICODE );
@@ -395,21 +392,13 @@ texture_font_load_glyphs( texture_font_t * self,
         return wcslen(charcodes);
     }
 
-    debugNetPrintf(INFO,"Now load each glyph: %d\n", wcslen(charcodes));
+    //debugNetPrintf(INFO,"Now load all %d glyph\n", wcslen(charcodes));
 
     tl = 0; // reset text length
 
     /* Load each glyph */
     for( i=0; i<wcslen(charcodes); ++i )
     {
-        //debugNetPrintf(DEBUG,"%2d --------------\n", i);
-        /*unsigned short *p = &charcodes[i];
-        FT_ULong l;
-        wchar_t *end = NULL, ch = 0;
-        memcpy(&ch, &charcodes[i], sizeof(wchar_t));
-        l = wcstoul(&ch, &end, 16);
-        debugNetPrintf(DEBUG,"%ld '%c' %p %p %.8lx %d %d %p\n", l, ch, &charcodes[i], end, l, sizeof(charcodes), *p, p);*/
-
         FT_Int32 flags = 0;
         int ft_bitmap_width = 0;
         int ft_bitmap_rows = 0;
@@ -418,7 +407,10 @@ texture_font_load_glyphs( texture_font_t * self,
         int ft_glyph_left = 0;
         glyph_index = FT_Get_Char_Index( face, charcodes[i] );
 
-        debugNetPrintf(DEBUG,"FT_Get_Char_Index return: %3d, face at %p, '%c' %3u %lu %lu\t %.8lx\n", glyph_index, face, charcodes[i], charcodes[i], sizeof(wchar_t), sizeof(FT_ULong), (FT_ULong)charcodes[i]);
+        /*
+        debugNetPrintf(DEBUG,"FT_Get_Char_Index return: %3d, face at %p, '%c' %3u %lu %lu\t %.8lx\n",
+            glyph_index, face, charcodes[i], charcodes[i], sizeof(wchar_t), sizeof(FT_ULong), (FT_ULong)charcodes[i]);
+        */
 
         // WARNING: We use texture-atlas depth to guess if user wants
         //          LCD subpixel rendering
@@ -613,7 +605,7 @@ texture_font_load_glyphs( texture_font_t * self,
     }
 
     // report last line length in px
-    debugNetPrintf(INFO,"tl = %f\n",  tl);
+    //debugNetPrintf(INFO,"tl = %f\n",  tl);
 
     FT_Done_Face( face );
     FT_Done_FreeType( library );

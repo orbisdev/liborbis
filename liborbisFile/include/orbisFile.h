@@ -6,6 +6,7 @@
 #ifndef _ORBISFILE_H_
 #define _ORBISFILE_H_
 
+#include <stdio.h> // SEEK_*
 #include <dirent.h>
 
 #ifdef __cplusplus
