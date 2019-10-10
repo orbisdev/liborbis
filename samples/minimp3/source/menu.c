@@ -143,7 +143,7 @@ int browserUpdateController(v4i *i)
     //select_file(currentEntry->dir->name);
     // (already selected on CROSS press)
 
-    sceKernelUsleep(10000000); // get more time to control pad
+    sceKernelUsleep(10000); // get more time to control pad
 
     return ret;
 }
@@ -159,7 +159,6 @@ static void getSizeString(char string[16], uint64_t size)
         double_size /= 1024.0;
         i++;
     }
-
     snprintf(string, 16, "%.*f %s", (i == 0) ? 0 : 2, double_size, units[i]);
 }
 

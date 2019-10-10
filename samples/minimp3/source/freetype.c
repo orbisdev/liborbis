@@ -5,11 +5,13 @@
  */
 
 #include "freetype.h"
+extern Orbis2dConfig *orbconf;  // hook main 2d conf to get framebuffer address
+static uint32_t __attribute__((aligned(16))) *pixel = NULL;
 
 
 static FT_Library library;
-static FT_Face    face   = NULL;
-static FT_Byte   *buffer = NULL;  // stores .ttf font data
+static FT_Face    face = NULL;
+static FT_Byte *buffer = NULL;  // stores ttf font data
 
 
 /* precomputed gradient colors [0-7] */
@@ -72,22 +74,22 @@ static void draw_bitmap(FT_Bitmap *bitmap, FT_Int x, FT_Int y) // glyph refs
     FT_Int i, j, p, q;
     FT_Int x_max = x + bitmap->width;
     FT_Int y_max = y + bitmap->rows;
-    //debugNetPrintf(DEBUG,"\n%d %d %d %d\n", x, x_max, y, y_max);
 
     /* for simplicity, we assume that `bitmap->pixel_mode' */
     /* is `FT_PIXEL_MODE_GRAY' (i.e., not a bitmap font)   */
 
     for(i = x, p = 0; i < x_max; i++, p++ )
     {
+        if(i < 0 || i >= ATTR_WIDTH) continue;
+
         for(j = y, q = 0; j < y_max; j++, q++ )
         {
-            if(i < 0           || j < 0 
-            || i >= ATTR_WIDTH || j >= ATTR_HEIGHT ) continue;
+            if(j < 0 || j >= ATTR_HEIGHT ) continue;
 
             //image[j][i] |= bitmap->buffer[q * bitmap->width + p];
             c = bitmap->buffer[q * bitmap->width + p];
 
-            /* we can do better about color... */
+            /* we can do better about color */
             if(c > 0
             && c < 0x80) {
                 pixelColor = ARGB(0xFF, c, c, c);
@@ -138,19 +140,22 @@ static v2i FT_loop_text(uint dst_x, uint dst_y, const char *text, int render_or_
     FT_GlyphSlot  slot = face->glyph;   /* a small shortcut */
     FT_Vector     pen;                  /* untransformed origin */
 
-    /* the pen position in cartesian space coordinates; */
+    /* the pen position in 26.6 cartesian space coordinates; */
     /* start at (dst_x, dst_y) relative to the upper left corner  */
     pen.x = dst_x * 64;
-    pen.y = (ATTR_HEIGHT - dst_y) * 64;
+    pen.y = ( ATTR_HEIGHT - dst_y ) * 64;
 
     /* transformation matrix */
-    FT_Matrix     matrix;
-    float a = (angle / 360) * 3.14159 * 2;  // use of degrees
+    FT_Matrix matrix;
+    float     a = ( angle / 360 ) * 3.14159 * 2;  // use of degrees
     /* set up matrix */
     matrix.xx = (FT_Fixed)( cosf( a ) * 0x10000L );
     matrix.xy = (FT_Fixed)(-sinf( a ) * 0x10000L );
     matrix.yx = (FT_Fixed)( sinf( a ) * 0x10000L );
     matrix.yy = (FT_Fixed)( cosf( a ) * 0x10000L );
+
+    /* refresh current fb address */
+    pixel = (uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer];
 
     for(uint n = 0; n < num_chars; n++)
     {
@@ -164,10 +169,9 @@ static v2i FT_loop_text(uint dst_x, uint dst_y, const char *text, int render_or_
         if(render_or_not)
         {
             /* now, draw to our target surface (convert position) */
-            draw_bitmap(
-                       &slot->bitmap,
-                        slot->bitmap_left,
-                        ATTR_HEIGHT - slot->bitmap_top);
+            draw_bitmap(&slot->bitmap,
+                         slot->bitmap_left,
+                         ATTR_HEIGHT - slot->bitmap_top);
         }
         /* increment pen position */
         pen.x += slot->advance.x;
