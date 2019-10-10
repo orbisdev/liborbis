@@ -30,7 +30,7 @@ typedef float vec4 __attribute__((ext_vector_type(4)));
 static float Time = 0.f;
 /*uniform vec2 mouse; */
 
-static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
+//static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
 //static       vec4 gl_FragColor;
 static const vec2 __attribute__((aligned(16))) step = { 1. /ATTR_WIDTH, 1. /ATTR_HEIGHT };
 
@@ -70,7 +70,7 @@ void glsl_e57400_avx( int variant )
     register uint32_t *pixel = (uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer];
 
     register vec2 gl_FragCoord = { 0, 1 };  // draw from upperleft
-    const    vec2 step         = (vec2)( 1. /resolution );
+    //const    vec2 step         = (vec2)( 1. /resolution );
 
     register int __attribute__((aligned(16))) w, h;
     __m256 __attribute__((aligned(32))) px, t1, t2;
@@ -93,7 +93,7 @@ void glsl_e57400_avx( int variant )
         _v3    = _mm256_set1_ps( 3.5 ),    _v4    = _mm256_set1_ps( 100.0 );
         _v5    = _mm256_set1_ps( 0.05 ),   _v6    = _mm256_set1_ps(  90.0 );
         _v7    = _mm256_set1_ps( 0.2 );    break;
-      case 0:
+      case 0: /* http://glslsandbox.com/e#57400.0 */
         _speed = _mm256_set1_ps( speed ),  _freq  = _mm256_set1_ps( freq );
         _amp   = _mm256_set1_ps( amp ),    _phase = _mm256_set1_ps( phase );
         _v1    = _mm256_set1_ps( 1.9 ),    _v2    = _mm256_set1_ps(  4.0 );
@@ -109,11 +109,12 @@ void glsl_e57400_avx( int variant )
         for(w=0; w < ATTR_WIDTH /8; w++) // each horizontal 8 pixels in (h) row
         {
          /* px = gl_FragCoord.x - 0.5; but for (x8) pixels */
-            px = _mm256_set_ps(gl_FragCoord.x - 0.5 + step.x *7, gl_FragCoord.x - 0.5 + step.x *6, 
-                               gl_FragCoord.x - 0.5 + step.x *5, gl_FragCoord.x - 0.5 + step.x *4,
-                               gl_FragCoord.x - 0.5 + step.x *3, gl_FragCoord.x - 0.5 + step.x *2, 
-                               gl_FragCoord.x - 0.5 + step.x *1, gl_FragCoord.x - 0.5 + step.x *0);
-                               // load in reverse order
+
+            // load in reverse order
+            t1 = _mm256_mul_ps( _mm256_set_ps( 7., 6., 5., 4., 3., 2., 1., 0. ),
+                                _mm256_set1_ps( step.x ) );                       // t1 = incremental step.x (x8)
+            px = _mm256_add_ps( t1,
+                                _mm256_set1_ps( gl_FragCoord.x - 0.5) );          // (x8) px
 
          /* sx = (amp)*1.9 * sin( 4.0 * (freq) * (p.x-phase) - 6.0 * (speed)*Time); */
 
@@ -160,7 +161,7 @@ void glsl_e57400_avx( int variant )
             px = _mm256_add_ps(px, _v5);
             px = _mm256_mul_ps(px, t2);   // * dy
             /* clamp 0.f-1.f */
-            px = _mm256_min_ps( _mm256_max_ps(px, _mm256_set1_ps(0.)), _mm256_set1_ps(1.f) ); // x8 R
+            px = _mm256_min_ps( _mm256_max_ps(px, _mm256_set1_ps( 0. )), _mm256_set1_ps( 1.f ) ); // x8 R
             px = _mm256_mul_ps(px, _mm256_set1_ps( 0xFF ));
 
             // _mm_storer_ps(B, px);  // in reverse order
@@ -183,6 +184,9 @@ void glsl_e57400_avx( int variant )
             //memcpy(&R, &t2, sizeof(__m256));
 
             /* unpack, compose pixel (x8) colors */
+            /*float* r = (float*)&t2;
+            float* g = (float*)&t1;
+            float* b = (float*)&px;*/
             //#pragma clang loop unroll(disable)
             #pragma clang loop unroll_count(8)
             for(int i=0; i<8; i++)
@@ -195,15 +199,12 @@ void glsl_e57400_avx( int variant )
                  /*orbis2dDrawPixelColor(w *8 +i, h, ARGB(0xFF, (unsigned char)(gl_FragColor.r),
                                                               (unsigned char)(gl_FragColor.g),
                                                               (unsigned char)(gl_FragColor.b)));*/
-                 float* r = (float*)&t2;
-                 float* g = (float*)&t1;
-                 float* b = (float*)&px;
                  /*orbis2dDrawPixelColor(w *8 +i, h, ARGB(0xFF, (unsigned char)(b[i]),
                                                               (unsigned char)(g[i]),
                                                               (unsigned char)(r[i])));*/
-                 *pixel++ = ARGB(0xFF, (unsigned char)(b[i]),
-                                       (unsigned char)(g[i]),
-                                       (unsigned char)(r[i]));
+                 *pixel++ = ARGB(0xFF, (unsigned char)(px[i]),
+                                       (unsigned char)(t1[i]),
+                                       (unsigned char)(t2[i]));  // ABGR
             }
             gl_FragCoord.x += step.x *8; // advance X *8
         }

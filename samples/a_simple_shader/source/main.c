@@ -349,6 +349,10 @@ int main(int argc, char *argv[])
 		// draw text with freetype
 		FT_print_text(400, 300, msg[m]);
 
+		//FT_print_text(0, 14, "textline");
+
+		//FT_print_text(100, ATTR_HEIGHT, "textline");
+
 		if(flipArg > 60) { add_angle(); }
 
 		if(flipArg % (60*4) == 0) {

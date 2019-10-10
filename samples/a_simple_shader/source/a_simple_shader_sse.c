@@ -29,7 +29,7 @@ typedef float vec4 __attribute__((ext_vector_type(4)));
 static float Time = 0.f;
 /*uniform vec2 mouse; */
 
-static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
+//static const vec2 resolution = { ATTR_WIDTH, ATTR_HEIGHT };
 //static       vec4 gl_FragColor;
 static const vec2 __attribute__((aligned(16))) step = { 1. /ATTR_WIDTH, 1. /ATTR_HEIGHT };
 
@@ -69,7 +69,7 @@ void glsl_e57400_sse( int variant )
     register uint32_t *pixel = (uint32_t *)orbconf->surfaceAddr[orbconf->currentBuffer];
 
     register vec2 gl_FragCoord = { 0, 1 };  // draw from upperleft
-    const    vec2 step         = (vec2)( 1. /resolution );
+    //const    vec2 step         = (vec2)( 1. /resolution );
     
     register int __attribute__((aligned(16))) w, h;
     __m128 __attribute__((aligned(16))) px, t1, t2;
@@ -79,23 +79,23 @@ void glsl_e57400_sse( int variant )
     switch( variant )
     {
       case 2: /* http://glslsandbox.com/e#57659.0 */
-        _speed = _mm_set1_ps( 0.3 ),    _freq  = _mm_set1_ps( 0.8 );
-        _amp   = _mm_set1_ps( 0.9 ),    _phase = _mm_set1_ps( 2.5 );
-        _v1    = _mm_set1_ps( 1.2 ),    _v2    = _mm_set1_ps( 5.0 );
+        _speed = _mm_set1_ps( 0.3 ),    _freq  = _mm_set1_ps(  0.8 );
+        _amp   = _mm_set1_ps( 0.9 ),    _phase = _mm_set1_ps(  2.5 );
+        _v1    = _mm_set1_ps( 1.2 ),    _v2    = _mm_set1_ps(  5.0 );
         _v3    = _mm_set1_ps( 6.0 ),    _v4    = _mm_set1_ps( 43.0 );
         _v5    = _mm_set1_ps( 0.025 ),  _v6    = _mm_set1_ps( 90.0 );
         _v7    = _mm_set1_ps( 0.05 );   break;
       case 1: /* http://glslsandbox.com/e#57444.0 */
-        _speed = _mm_set1_ps( 0.2 ),    _freq  = _mm_set1_ps( 0.7 );
-        _amp   = _mm_set1_ps( 0.5 ),    _phase = _mm_set1_ps( 0.5 );
-        _v1    = _mm_set1_ps( 1.2 ),    _v2    = _mm_set1_ps( 9.0 );
+        _speed = _mm_set1_ps( 0.2 ),    _freq  = _mm_set1_ps(   0.7 );
+        _amp   = _mm_set1_ps( 0.5 ),    _phase = _mm_set1_ps(   0.5 );
+        _v1    = _mm_set1_ps( 1.2 ),    _v2    = _mm_set1_ps(   9.0 );
         _v3    = _mm_set1_ps( 3.5 ),    _v4    = _mm_set1_ps( 100.0 );
-        _v5    = _mm_set1_ps( 0.05 ),   _v6    = _mm_set1_ps( 90.0 );
+        _v5    = _mm_set1_ps( 0.05 ),   _v6    = _mm_set1_ps(  90.0 );
         _v7    = _mm_set1_ps( 0.2 );    break;
       case 0: /* http://glslsandbox.com/e#57400.0 */
         _speed = _mm_set1_ps( speed ),  _freq  = _mm_set1_ps( freq );
         _amp   = _mm_set1_ps( amp ),    _phase = _mm_set1_ps( phase );
-        _v1    = _mm_set1_ps( 1.9 ),    _v2    = _mm_set1_ps( 4.0 );
+        _v1    = _mm_set1_ps( 1.9 ),    _v2    = _mm_set1_ps(  4.0 );
         _v3    = _mm_set1_ps( 6.0 ),    _v4    = _mm_set1_ps( 43.0 );
         _v5    = _mm_set1_ps( 0.5 ),    _v6    = _mm_set1_ps( 60.0 );
         _v7    = _mm_set1_ps( 0.2 );    break;
@@ -108,9 +108,13 @@ void glsl_e57400_sse( int variant )
         for(w=0; w < ATTR_WIDTH /4; w++) // each horizontal 4 pixels in (h) row
         {
          /* px = gl_FragCoord.x - 0.5; but for (x4) pixels */
-            px = _mm_set_ps(gl_FragCoord.x - 0.5 + step.x *3, gl_FragCoord.x - 0.5 + step.x *2, 
+         /* px = _mm_set_ps(gl_FragCoord.x - 0.5 + step.x *3, gl_FragCoord.x - 0.5 + step.x *2,
                             gl_FragCoord.x - 0.5 + step.x *1, gl_FragCoord.x - 0.5 + step.x *0);
-                            // load in reverse order
+            // load in reverse order*/
+            t1 = _mm_mul_ps( _mm_set_ps( 3., 2., 1., 0. ),
+                             _mm_set1_ps( step.x ) );               // t1 = incremental step.x
+            px = _mm_add_ps( t1,
+                             _mm_set1_ps( gl_FragCoord.x - 0.5) );  // t2 = px (x4)
 
          /* sx = (amp)*1.9 * sin( 4.0 * (freq) * (p.x-phase) - 6.0 * (speed)*Time); */
 
@@ -186,6 +190,9 @@ void glsl_e57400_sse( int variant )
             //memcpy(&R, &t2, sizeof(__m128));
 
             /* unpack, compose pixel (x4) colors */
+            /*float* r = (float*)&t2;
+            float* g = (float*)&t1;
+            float* b = (float*)&px;*/
             #pragma clang loop unroll_count(4)
             for(int i=0; i<4; i++)
             {
@@ -197,15 +204,12 @@ void glsl_e57400_sse( int variant )
                  /*orbis2dDrawPixelColor(w *4 +i, h, ARGB(0xFF, (unsigned char)(gl_FragColor.r),
                                                               (unsigned char)(gl_FragColor.g),
                                                               (unsigned char)(gl_FragColor.b)));*/
-                 float* r = (float*)&t2;
-                 float* g = (float*)&t1;
-                 float* b = (float*)&px;
                  /*orbis2dDrawPixelColor(w *4 +i, h, ARGB(0xFF, (unsigned char)(b[i]),
                                                               (unsigned char)(g[i]),
                                                               (unsigned char)(r[i])));*/
-                 *pixel++ = ARGB(0xFF, (unsigned char)(b[i]),
-                                       (unsigned char)(g[i]),
-                                       (unsigned char)(r[i]));
+                 *pixel++ = ARGB(0xFF, (unsigned char)(px[i]),
+                                       (unsigned char)(t1[i]),
+                                       (unsigned char)(t2[i]));  // ABGR
             }
             gl_FragCoord.x += step.x *4; // advance X *4
         }
