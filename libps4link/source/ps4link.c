@@ -191,15 +191,15 @@ int ps4LinkInitWithConf(ps4LinkConfiguration *conf)
 		{
 		
 			debugNetPrintf(INFO,"ps4link already initialized using configuration from ps4link\n");			
-			debugNetPrintf(INFO,"ps4link_fileio_active=%d\n",ps4LinkGetValue(FILEIO_ACTIVE));
-			debugNetPrintf(INFO,"ps4link_cmdsio_active=%d\n",ps4LinkGetValue(CMDSIO_ACTIVE));
-			debugNetPrintf(INFO,"ps4link_initialized=%d\n",ps4LinkGetValue(PS4LINK_ACTIVE));
-			debugNetPrintf(INFO,"ps4link_requests_port=%d\n",ps4LinkGetValue(REQUESTS_PORT));
-			debugNetPrintf(INFO,"ps4link_commands_port=%d\n",ps4LinkGetValue(COMMANDS_PORT));
-			debugNetPrintf(INFO,"ps4link_debug_port=%d\n",ps4LinkGetValue(DEBUG_PORT));
-			debugNetPrintf(INFO,"ps4link_fileio_sock=%d\n",ps4LinkGetValue(FILEIO_SOCK));
-			debugNetPrintf(INFO,"ps4link_requests_sock=%d\n",ps4LinkGetValue(REQUESTS_SOCK));
-			debugNetPrintf(INFO,"ps4link_commands_sock=%d\n",ps4LinkGetValue(COMMANDS_SOCK));
+			debugNetPrintf(INFO,"ps4link_fileio_active = %d\n",ps4LinkGetValue(FILEIO_ACTIVE));
+			debugNetPrintf(INFO,"ps4link_cmdsio_active = %d\n",ps4LinkGetValue(CMDSIO_ACTIVE));
+			debugNetPrintf(INFO,"ps4link_initialized   = %d\n",ps4LinkGetValue(PS4LINK_ACTIVE));
+			debugNetPrintf(INFO,"ps4link_requests_port = %d\n",ps4LinkGetValue(REQUESTS_PORT));
+			debugNetPrintf(INFO,"ps4link_commands_port = %d\n",ps4LinkGetValue(COMMANDS_PORT));
+			debugNetPrintf(INFO,"ps4link_debug_port    = %d\n",ps4LinkGetValue(DEBUG_PORT));
+			debugNetPrintf(INFO,"ps4link_fileio_sock   = %d\n",ps4LinkGetValue(FILEIO_SOCK));
+			debugNetPrintf(INFO,"ps4link_requests_sock = %d\n",ps4LinkGetValue(REQUESTS_SOCK));
+			debugNetPrintf(INFO,"ps4link_commands_sock = %d\n",ps4LinkGetValue(COMMANDS_SOCK));
 			return ps4LinkGetValue(PS4LINK_ACTIVE);
 		}
 		else
