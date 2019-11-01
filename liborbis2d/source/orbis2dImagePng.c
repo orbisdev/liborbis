@@ -200,6 +200,17 @@ Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *path)
 	return orbis2dLoadPngFromBuffer(buf);  //create png from buf
 }
 
+#include <orbisFile.h>
+Orbis2dTexture *orbis2dLoadPngFromHost_v3(const char *path)
+{
+    char *buf = orbisFileGetFileContent(path);
+    if(buf)
+    {
+        return orbis2dLoadPngFromBuffer(buf);  //create png from buf
+    }
+    return NULL;
+}
+
 // uses standard open/lseek/read/close to access sandbox'ed content
 Orbis2dTexture *orbis2dLoadPngFromSandBox(const char *path)
 {

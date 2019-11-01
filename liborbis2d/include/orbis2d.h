@@ -108,6 +108,7 @@ uint32_t orbis2dTextureGetHeight(Orbis2dTexture *texture);
 Orbis2dTexture *orbis2dLoadPngFromBuffer(const void *buffer);
 Orbis2dTexture *orbis2dLoadPngFromHost(const char *path);
 Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *path);
+Orbis2dTexture *orbis2dLoadPngFromHost_v3(const char *path);
 Orbis2dTexture *orbis2dLoadPngFromSandBox(const char *path);
 uint16_t orbis2dGetTextureXAlign(Orbis2dTexture *texture, const uint8_t alignment);
 uint16_t orbis2dGetTextureYAlign(Orbis2dTexture *texture, const uint8_t alignment);

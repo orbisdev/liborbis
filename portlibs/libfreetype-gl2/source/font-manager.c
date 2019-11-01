@@ -20,7 +20,7 @@
   // each orbisFileGetFileContent() call will update filesize!
   extern size_t _orbisFile_lastopenFile_size;
 
-#endif
+#else
 
 
 // ------------------------------------------------------------ file_exists ---
@@ -35,6 +35,7 @@ file_exists( const char * filename )
     }
     return 0;
 }
+#endif
 
 
 // ------------------------------------------------------- font_manager_new ---
@@ -206,7 +207,7 @@ font_manager_get_from_markup( font_manager_t *self,
                           self,
                           markup->family, markup->size,
                           markup->bold,   markup->italic);
-    sleep(1);
+
     return font_manager_get_from_description( self, markup->family, markup->size,
                                               markup->bold,   markup->italic );
 }

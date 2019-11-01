@@ -402,7 +402,6 @@ texture_font_load_glyph( texture_font_t * self,
     int ft_glyph_left = 0;
 
     ivec4 region;
-    size_t missed = 0;
 
     //debugNetPrintf(DEBUG,"codepoint:%.4x %p\n", *codepoint, codepoint);
 
@@ -676,7 +675,7 @@ size_t
 texture_font_load_glyphs( texture_font_t * self,
                           const char * codepoints )
 {
-    size_t i, c;
+    size_t i;
     tl = 0; //reset text length
 
 //debugNetPrintf(DEBUG,"texture_font_load_glyphs( %p, %p );", self, codepoints);
