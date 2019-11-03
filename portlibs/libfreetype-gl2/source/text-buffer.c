@@ -201,7 +201,7 @@ text_buffer_add_text( text_buffer_t * self,
     if( length == 0 )
     {
         length = utf8_strlen(text);
-        debugNetPrintf(DEBUG, "text: %s, length:%d\n", text, length);
+        //debugNetPrintf(DEBUG, "text: %s, length:%d\n", text, length);
     }
     if( vertex_buffer_size( self->buffer ) == 0 )
     {
@@ -224,7 +224,7 @@ text_buffer_add_text( text_buffer_t * self,
 
     for( i = 0; length; i += utf8_surrogate_len( text + i ) )
     {
-        debugNetPrintf(DEBUG,"text_buffer_add_char(%p, i:%d '%p', '%p':'%c')\n", markup, i, text + i, &text[i], text[i]);
+        //debugNetPrintf(DEBUG,"text_buffer_add_char(%p, i:%d '%p', '%p':'%c')\n", markup, i, text + i, &text[i], text[i]);
         
 /*
 log: [PS4][DEBUG]: text_buffer_add_char(7ee5e7a00, i:0 '2002ca3a0', '2002ca3a0':'T' 54)
@@ -301,7 +301,7 @@ text_buffer_add_char( text_buffer_t * self,
 
     if( previous && markup->font->kerning )
     {
-        debugNetPrintf(DEBUG,"texture_glyph_get_kerning\n");
+        //debugNetPrintf(DEBUG,"texture_glyph_get_kerning\n");
         kerning = texture_glyph_get_kerning( glyph, previous );
     }
     pen->x += kerning;
@@ -309,7 +309,7 @@ text_buffer_add_char( text_buffer_t * self,
     // Background
     if( markup->background_color.alpha > 0 )
     {
-        debugNetPrintf(DEBUG,"Background\n");
+        //debugNetPrintf(DEBUG,"Background\n");
         float r = markup->background_color.r;
         float g = markup->background_color.g;
         float b = markup->background_color.b;
@@ -343,7 +343,7 @@ text_buffer_add_char( text_buffer_t * self,
     // Underline
     if( markup->underline )
     {
-        debugNetPrintf(DEBUG,"Underline\n");
+        //debugNetPrintf(DEBUG,"Underline\n");
         float r = markup->underline_color.r;
         float g = markup->underline_color.g;
         float b = markup->underline_color.b;
@@ -378,7 +378,7 @@ text_buffer_add_char( text_buffer_t * self,
     // Overline
     if( markup->overline )
     {
-        debugNetPrintf(DEBUG,"Overline\n");
+        //debugNetPrintf(DEBUG,"Overline\n");
         float r = markup->overline_color.r;
         float g = markup->overline_color.g;
         float b = markup->overline_color.b;
@@ -412,7 +412,7 @@ text_buffer_add_char( text_buffer_t * self,
     /* Strikethrough */
     if( markup->strikethrough )
     {
-        debugNetPrintf(DEBUG,"Strikethrough\n");
+        //debugNetPrintf(DEBUG,"Strikethrough\n");
         float r = markup->strikethrough_color.r;
         float g = markup->strikethrough_color.g;
         float b = markup->strikethrough_color.b;
@@ -443,7 +443,7 @@ text_buffer_add_char( text_buffer_t * self,
         icount += 6;
     }
     {
-        debugNetPrintf(DEBUG,"Actual glyph\n");
+        //debugNetPrintf(DEBUG,"Actual glyph\n");
         // Actual glyph
         float r = markup->foreground_color.red;
         float g = markup->foreground_color.green;
