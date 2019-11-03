@@ -40,17 +40,19 @@ void select_entry(char *p)
 }
 
 
-#define MAX_DRAWN_LINES  (25)
 int stride = 0;  // stride rows, let scroll file selector
 
-static void refresh_page()
+extern char refresh;
+
+static void refresh_page(int page)
 {
-    currentEntry = orbisFileBrowserListGetNthEntry(0);  // force first entry
+    currentEntry = orbisFileBrowserListGetNthEntry(page * MAX_DRAWN_LINES); // address entry
     select_entry(currentEntry->dir->name);
     debugNetPrintf(INFO,"select_entry(%s)\n", currentEntry->dir->name);
     debugNetPrintf(INFO,"selected_entry(%s)\n", selected_entry);
 
-    //debugNetPrintf(INFO,"2. folder, dirLevel:%d\n", orbisFileBrowserGetDirLevel());
+    debugNetPrintf(INFO,"refresh_page(%d), dirLevel:%d\n", page, orbisFileBrowserGetDirLevel());
+    refresh = 1;
 }
 
 // return value sets need of orbis2dDumpBuffer() refresh
@@ -72,7 +74,8 @@ static int run_selected(v4i *menu_pos)
         }
 
         menu_pos->y = stride = 0;
-        refresh_page();
+        refresh_page(0);
+
         return 1;
     }
 
@@ -103,9 +106,10 @@ static int run_selected(v4i *menu_pos)
 // we pass pointer, we change value on return!
 int browserUpdateController(v4i *i)
 {
-    int ret = 0;
+    if(i->z != MAIN) return 0;  // menu closed, do nothing
 
-    if(i->z == CLOSED) return 0;  // menu closed, do nothing
+    int ret = 0,
+        s_check = 0;  // different stride_check for UP/DOWN to trigger refresh_page()
 
     /*debugNetPrintf(DEBUG," before entry down level=%d base=%d rel=%d %d files\n",
                orbisFileBrowserGetDirLevel(),
@@ -115,14 +119,14 @@ int browserUpdateController(v4i *i)
 
     switch(i->w) // PRESSED_BUTTON
     {
-        case ORBISPAD_UP:     i->y -= 1;              break;
-        case ORBISPAD_DOWN:   i->y += 1;              break;
-        case ORBISPAD_CROSS:  ret = run_selected(i);  break;
+        case ORBISPAD_UP:      i->y -= 1; s_check = MAX_DRAWN_LINES -1; break;
+        case ORBISPAD_DOWN:    i->y += 1; s_check = 0;                  break;
+        case ORBISPAD_CROSS:   ret   = run_selected(i);                 break;
         case ORBISPAD_CIRCLE:
                  if(orbisFileBrowserGetDirLevel() > 1)
-                 { orbisFileBrowserDirLevelDown(); i->y = 0;
-                 refresh_page(); ret = 1; sleep(1); } break;
-        default: break;
+                 { orbisFileBrowserDirLevelDown(); i->y = 0; ret = 1; } break;
+        default:
+            break;
     }
 
     /* bound checking */
@@ -131,13 +135,20 @@ int browserUpdateController(v4i *i)
 
     stride = i->y %(MAX_DRAWN_LINES);
 
-    if(stride == 0
-    || stride == MAX_DRAWN_LINES -1) { ret = 1; }  // ask for orbis2dDumpBuffer()
+    /* trigger refresh_page() if needed */
+    if(stride == s_check
+    || ret)
+        { refresh_page(i->y /MAX_DRAWN_LINES); }  // ask for orbis2dDumpBuffer() in 2d ctx
+    else
+    {
+        currentEntry = orbisFileBrowserListGetNthEntry(i->y);
+      //currentEntry=orbisFileBrowserListGetNthEntry(orbisFileBrowserGetBasePos()+orbisFileBrowserGetRelPos());
+    }
 
-    currentEntry = orbisFileBrowserListGetNthEntry(i->y);
-    //currentEntry=orbisFileBrowserListGetNthEntry(orbisFileBrowserGetBasePos()+orbisFileBrowserGetRelPos());
-    debugNetPrintf(INFO,"stride: %d, current entry:%d '%s', view:%d, col:%d, line:%d\n",
-                   stride, i->y, currentEntry->dir->name, i->z, i->x, i->y);
+    debugNetPrintf(INFO, "stride: %d, current entry:%d '%s', view:%d, col:%d, line:%d, page:%d\n",
+                          stride, i->y, currentEntry->dir->name,
+                          i->z, i->x, i->y,
+                          i->y /MAX_DRAWN_LINES); // page num
 
     // update selected file (ready to run)
     //select_file(currentEntry->dir->name);
