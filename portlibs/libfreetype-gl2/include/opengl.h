@@ -25,7 +25,8 @@
 #elif defined(__PS4__)
 #  include <orbisGl.h>
 #else
-#  include <GL/glew.h>
+//#  include <GL/glew.h>  /// XXX avoid GLEW: strange behaviors on glUseProgram()
+#  include <GLES2/gl2.h>
 #  include <GL/gl.h>
 #endif
 

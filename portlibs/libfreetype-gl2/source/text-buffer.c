@@ -201,7 +201,7 @@ text_buffer_add_text( text_buffer_t * self,
     if( length == 0 )
     {
         length = utf8_strlen(text);
-        //debugNetPrintf(DEBUG, "text: %s, length:%d\n", text, length);
+        //debugNetPrintf(DEBUG, "text: %s, length:%zu\n", text, length);
     }
     if( vertex_buffer_size( self->buffer ) == 0 )
     {
