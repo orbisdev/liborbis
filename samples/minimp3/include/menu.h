@@ -19,6 +19,8 @@ enum MENU_PAGE {
 	MAX_MENU_PAGES
 };
 
+#define MAX_DRAWN_LINES  (27)
+
 /* a vector of 4 ints */
 typedef int v4i __attribute__((ext_vector_type(4)));
 

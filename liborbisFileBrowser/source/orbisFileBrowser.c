@@ -161,8 +161,7 @@ void orbisFileBrowserDirLevelUp(char *path)
 	basePos=0;
 	relPos=0;
 	orbisFileBrowserSetListPath(path);
-	orbisFileBrowserListRefresh();			
-	
+	orbisFileBrowserListRefresh();
 }
 void orbisFileBrowserDirLevelDown() 
 {
@@ -346,6 +345,9 @@ int orbisFileBrowserGetDirectoryEntries(char *path)
 			res=ps4LinkDread(dfd,dir);
 			if(res>0)
 			{
+				/* skip useless backup (~) files! */
+				if(strstr(dir->name, "~")) continue;
+
 				OrbisFileBrowserListEntry *entry=malloc(sizeof(OrbisFileBrowserListEntry));
 				entry->dir=dir;
 				if(dir->type!=DT_DIR)

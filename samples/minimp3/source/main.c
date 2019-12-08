@@ -11,6 +11,14 @@
 #include <debugnet.h>
 #include <orbisXbmFont.h>
 #include <orbisFile.h>
+#include "minimp3_test.h"  // mp3 decoder
+
+#include "menu.h"   // menu part
+v4i pos = (0);      // file selection in menu
+
+#include "freetype.h"  // uses FT_
+
+#include "twist.h"  // twister demo
 
 
 int x=ATTR_WIDTH /2;
@@ -29,7 +37,7 @@ Orbis2dConfig  *conf;
 OrbisPadConfig *confPad;
 
 
-static char refresh = 1;
+char refresh = 1;
 
 typedef struct OrbisGlobalConf
 {
@@ -54,14 +62,6 @@ static void rr()  // randomize rectangle
     rcolor = ARGB(0xFF, rand()%256, rand()%256, rand()%256);
 }
 
-#include "minimp3_test.h"  // mp3 decoder
-
-#include "menu.h"   // menu part
-v4i pos = (0);      // file selection in menu
-
-#include "freetype.h"  // uses FT_
-
-#include "twist.h"  // twister demo
 
 void updateController()
 {
@@ -105,8 +105,7 @@ void updateController()
             switch(pos.z)
             {
                 case MAIN:
-                    pos.w   = ORBISPAD_UP;
-                    refresh = browserUpdateController(&pos);
+                    pos.w = ORBISPAD_UP; browserUpdateController(&pos);
                     break;
                 default:
                     y = (y-step>=0) ? y-step : 0;
@@ -120,8 +119,7 @@ void updateController()
             switch(pos.z)
             {
                 case MAIN:
-                    pos.w   = ORBISPAD_DOWN;
-                    refresh = browserUpdateController(&pos);
+                    pos.w = ORBISPAD_DOWN; browserUpdateController(&pos);
                     break;
                 default:
                     y = (y+step<conf->height-1) ? y+step : conf->height-1-step;
@@ -162,17 +160,16 @@ void updateController()
         }
         if(orbisPadGetButtonPressed(ORBISPAD_CIRCLE))
         {
-            debugNetPrintf(DEBUG,"Circle pressed reset position and color red\n");
+            debugNetPrintf(DEBUG,"Circle pressed\n");
 
             switch(pos.z)
             {
                 case MAIN:
-                    pos.w   = ORBISPAD_CIRCLE;
-                    refresh = browserUpdateController(&pos);
+                    pos.w = ORBISPAD_CIRCLE; browserUpdateController(&pos);
                     break;
                 default:
-                    x=1280/2;
-                    y=720/2;
+                    x=ATTR_WIDTH /2;
+                    y=ATTR_HEIGHT/2;
                     color=0x80ff0000;
                     orbisAudioResume(0);
                     break;
@@ -185,8 +182,7 @@ void updateController()
             switch(pos.z)
             {
                 case MAIN:
-                    pos.w   = ORBISPAD_CROSS;
-                    refresh = browserUpdateController(&pos);                    //enterDir(&pos); refresh = 1;
+                    pos.w = ORBISPAD_CROSS; browserUpdateController(&pos);
                     break;
                 default:
                     R=rand()%256;
@@ -249,7 +245,7 @@ void initApp()
     int ret;
     debugNetPrintf(DEBUG,"[PS4LINK] Initialized and connected from pc/mac ready to receive commands\n");
 
-    //hide playroom splash
+    //hide splashscreen
     sceSystemServiceHideSplashScreen();
     //more library initialiazation here pad,filebroser,audio,keyboard, etc
     //....
@@ -308,8 +304,9 @@ int main(int argc, char *argv[])
     initApp();
 
     minimp3_Init(0);
-    ret =   minimp3_Load("host0:outputfile.mp3");
-    if(ret) minimp3_Play();
+    ret = minimp3_Load("host0:outputfile.mp3");
+    if(ret)
+        minimp3_Play();
     orbisAudioResume(0);
 
     // define text fading colors

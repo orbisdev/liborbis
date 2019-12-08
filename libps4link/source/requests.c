@@ -37,11 +37,10 @@ int ps4LinkRequestsIsConnected()
 	else
 	{
        // DEBUG(INFO,"ps4link is not connected   %d\n", no_connected);
-		
-		
 	}
 	return ps4link_requests_connected;
 }
+
 void ps4link_close_socket(void)
 {
 	int ret;
@@ -67,8 +66,8 @@ void ps4LinkRequestsAbort()
 			debugNetPrintf(DEBUG,"[PS4LINK] abort ps4link_requests_sock returned error 0x%08X\n", ret);
 		}
 	}
-	
 }
+
 static inline int ps4link_send(int sock, void *buf, int len, int flag)
 {
 	int ret;
@@ -83,7 +82,7 @@ static inline int ps4link_send(int sock, void *buf, int len, int flag)
 	}
 }
 
-int ps4link_recv_bytes(int sock, char *buf, int bytes)
+int ps4link_recv_bytes(int sock, char *buf, size_t bytes)
 {
 	size_t left;
 	int len;
@@ -260,13 +259,13 @@ int ps4LinkClose(int fd)
 		return -1;
 	}
 
-	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_close_file: close reply received (ret %d)\n", sceNetNtohl(closerly->retval));
+       int ret = sceNetNtohl(closerly->retval);
+	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_close_file: close reply received (ret %d)\n", ret);
 
-	return sceNetNtohl(closerly->retval);
-	
-	
-	
+
+	return ret;
 }
+
 int ps4LinkRead(int fd, void *data, size_t size)
 {
 	int readbytes;
@@ -289,7 +288,7 @@ int ps4LinkRead(int fd, void *data, size_t size)
 
 	readcmd->cmd = sceNetHtonl(PS4LINK_READ_CMD);
 	readcmd->len = sceNetHtons((unsigned short)sizeof(ps4link_pkt_read_req));
-	readcmd->fd = sceNetHtonl(fd);
+	readcmd->fd  = sceNetHtonl(fd);
 
 	readbytes = 0;
 
@@ -313,7 +312,8 @@ int ps4LinkRead(int fd, void *data, size_t size)
 	}
 
 	nbytes = sceNetNtohl(readrly->nbytes);
-	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_read_file: Reply said there's %d bytes to read " "(wanted %d)\n", nbytes, size);
+	if(nbytes != size)
+	   debugNetPrintf(DEBUG,"[PS4LINK] ps4link_read_file: Reply said there's %d bytes to read " "(wanted %d)\n", nbytes, size);
 
 	// Now read the actual file data divide in chunk
 	if(nbytes<PACKET_MAXSIZE)
@@ -339,15 +339,15 @@ int ps4LinkRead(int fd, void *data, size_t size)
 			else
 			{
 				i = ps4link_recv_bytes(ps4LinkGetValue(FILEIO_SOCK), data+j*PACKET_MAXSIZE, PACKET_MAXSIZE+lastread);
-			
 			}
 			if (i < 0) {
 	    		debugNetPrintf(DEBUG,"[PS4LINK] ps4link_read_file, data read error\n");
 	    		return -1;
 			}
-			debugNetPrintf(DEBUG,"[PS4LINK] ps4link_read_file: chunk %d  readed %d\n", j,i);
+			/*
+			debugNetPrintf(DEBUG,"[PS4LINK] ps4link_read_file: chunk %d  readed %d\n", j,i);  ///
+			*/
 		}
-		
 	}
 	
 	
@@ -369,7 +369,7 @@ int ps4LinkWrite(int fd, const void *data, size_t size)
 	debugNetPrintf(DEBUG,"[PS4LINK] file write req (fd: %d)\n", fd);
 
 	writecmd = (ps4link_pkt_write_req *)&send_packet[0];
-	writerly = (ps4link_pkt_file_rly *)&recv_packet[0];
+	writerly = (ps4link_pkt_file_rly *) &recv_packet[0];
 
 	hlen = (unsigned short)sizeof(ps4link_pkt_write_req);
 	writecmd->cmd = sceNetHtonl(PS4LINK_WRITE_CMD);
@@ -445,7 +445,7 @@ int ps4LinkLseek(int fd, int offset, int whence)
 	debugNetPrintf(DEBUG,"[PS4LINK] file lseek req (fd: %d)\n", fd);
 
 	lseekreq = (ps4link_pkt_lseek_req *)&send_packet[0];
-	lseekrly = (ps4link_pkt_file_rly *)&recv_packet[0];
+	lseekrly = (ps4link_pkt_file_rly *) &recv_packet[0];
 
 	lseekreq->cmd = sceNetHtonl(PS4LINK_LSEEK_CMD);
 	lseekreq->len = sceNetHtons((unsigned short)sizeof(ps4link_pkt_lseek_req));
@@ -462,11 +462,12 @@ int ps4LinkLseek(int fd, int offset, int whence)
 		return -1;
 	}
 
-	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_lseek_file: lseek reply received (ret %d)\n",sceNetNtohl(lseekrly->retval));
+	int ret = sceNetNtohl(lseekrly->retval);
+	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_lseek_file: lseek reply received (ret %d)\n",ret);
 
-	return sceNetNtohl(lseekrly->retval);
-	
+	return ret;
 }
+
 int ps4LinkRemove(const char *file)
 {
 	ps4link_pkt_remove_req *removereq;
@@ -496,9 +497,12 @@ int ps4LinkRemove(const char *file)
 	}
 
 	removerly = (ps4link_pkt_file_rly *)recv_packet;
-	debugNetPrintf(DEBUG,"[PS4LINK] file remove reply received (ret %d)\n", sceNetNtohl(removerly->retval));
-	return sceNetNtohl(removerly->retval);
+	int ret = sceNetNtohl(removerly->retval);
+	debugNetPrintf(DEBUG,"[PS4LINK] file remove reply received (ret %d)\n", ret);
+
+	return ret;
 }
+
 int ps4LinkMkdir(const char *dirname, int mode)
 {
 	ps4link_pkt_mkdir_req *mkdirreq;
@@ -529,9 +533,12 @@ int ps4LinkMkdir(const char *dirname, int mode)
 	}
 
 	mkdirrly = (ps4link_pkt_file_rly *)recv_packet;
-	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_file: make dir reply received (ret %d)\n", sceNetNtohl(mkdirrly->retval));
-	return sceNetNtohl(mkdirrly->retval);
+	int ret = sceNetNtohl(mkdirrly->retval);
+	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_file: make dir reply received (ret %d)\n", ret);
+
+	return ret;
 }
+
 int ps4LinkRmdir(const char *dirname)
 {
 	ps4link_pkt_rmdir_req *rmdirreq;
@@ -561,8 +568,9 @@ int ps4LinkRmdir(const char *dirname)
 	}
 
     rmdirrly = (ps4link_pkt_file_rly *)recv_packet;
-	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_file: remove dir reply received (ret %d)\n", sceNetNtohl(rmdirrly->retval));
-	return sceNetNtohl(rmdirrly->retval);
+       int ret = sceNetNtohl(rmdirrly->retval);
+	debugNetPrintf(DEBUG,"[PS4LINK] ps4link_file: remove dir reply received (ret %d)\n", ret);
+	return ret;
 }
 int ps4LinkDopen(const char *dirname)
 {
@@ -594,10 +602,10 @@ int ps4LinkDopen(const char *dirname)
 	}
 
 	openrly = (ps4link_pkt_file_rly *)recv_packet;
-    
-	debugNetPrintf(DEBUG,"[PS4LINK] dir open reply received (ret %d)\n", sceNetNtohl(openrly->retval));
+       int ret = sceNetNtohl(openrly->retval);
+	debugNetPrintf(DEBUG,"[PS4LINK] dir open reply received (ret %d)\n", ret);
 
-	return sceNetNtohl(openrly->retval);
+	return ret;
 }
 int ps4LinkDread(int fd, OrbisDirEntry *dir)
 {
@@ -720,7 +728,6 @@ void *ps4link_requests_thread(void * args)
 	if(ps4LinkGetValue(REQUESTS_SOCK)>=0)
 	{
 		debugNetPrintf(DEBUG,"[PS4LINK] Created ps4link_requests_sock: %d\n", ps4LinkGetValue(REQUESTS_SOCK));
-		
 	}
   	
 	/* Fill the server's address */
@@ -794,10 +801,8 @@ void *ps4link_requests_thread(void * args)
 		ps4link_requests_connected=1;
 		
 		debugNetPrintf(DEBUG,"[PS4LINK] sock ps4link_fileio set %d connected %d\n",ps4LinkGetValue(FILEIO_SOCK),ps4link_requests_connected);
-		
-		
-		
 	}
+	
 	debugNetPrintf(DEBUG,"[PS4LINK] exit thread requests\n");
 	if(ps4LinkGetValue(FILEIO_SOCK))
 	{

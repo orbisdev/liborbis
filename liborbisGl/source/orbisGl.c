@@ -545,12 +545,14 @@ int orbisGlInit(unsigned int width,unsigned int height)
 		return -1;
 	}
 	debugNetPrintf(INFO,"[ORBISGL] eglMakeCurrent success.\n");
-	debugNetPrintf(INFO,"[ORBISGL] GL_VERSION: %s\n",glGetString(GL_VERSION));
-	debugNetPrintf(INFO,"[ORBISGL] GL_RENDERER: %s\n",glGetString(GL_RENDERER));
-	
+	const char *gl_exts = (char *) glGetString(GL_EXTENSIONS);
+	debugNetPrintf(INFO,"[ORBISGL] GL_VENDOR:   \"%s\"\n", glGetString(GL_VENDOR));
+	debugNetPrintf(INFO,"[ORBISGL] GL_VERSION:  \"%s\"\n", glGetString(GL_VERSION));
+	debugNetPrintf(INFO,"[ORBISGL] GL_RENDERER: \"%s\"\n", glGetString(GL_RENDERER));
+	debugNetPrintf(INFO,"[ORBISGL] SL_VERSION:  \"%s\"\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	debugNetPrintf(INFO,"[ORBISGL] GL_EXTs:     \"%s\"\n", gl_exts);
 	orbisGlConf->orbisgl_initialized=1;
 	debugNetPrintf(INFO,"[ORBISGL] liborbisGl initialized\n");
-	
-	
+
 	return orbisGlConf->orbisgl_initialized;
 }
