@@ -8,7 +8,7 @@ liborbisNfs a libnfs port for PlayStation 4
   
   You must use only ip, name resolution not implemented call orbisNfsInit(nfs:ip/pathofyourexport)
 
-  sample available at https://github.com/orbisdev/sample/samplenfs
+  sample available at https://github.com/orbisdev/samples/tree/master/samplenfs
 
 
   Change log
