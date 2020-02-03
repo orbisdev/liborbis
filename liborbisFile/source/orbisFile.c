@@ -15,60 +15,54 @@
 #define ORBISFILE_MAX_OPEN_DESCRIPTORS 10
 int orbisFileRemoteOpenDescriptors[ORBISFILE_MAX_OPEN_DESCRIPTORS];
 int orbisfile_initialized=0;
+int lastopenedslot=-1;
 
 int orbisCheckSlotByFd(int fd)
 {
-	if(fd<0)
-	{
-		return -1;
-	}
-	int i = 0;
-	int slot = -1;
+	if(fd<0) return -1;
 
+	int i, slot = -1;
 	// search slot
 	for(i=0;i<ORBISFILE_MAX_OPEN_DESCRIPTORS;i++) 
 	{ 
-		if(orbisFileRemoteOpenDescriptors[i]==fd) 
-		{ 
-			slot=i;
-			break;
-		}
+		if(orbisFileRemoteOpenDescriptors[i]==fd) return i;
 	}
 	return slot;
 }
 int orbisCheckFreeRemoteDescriptor()
 {
-	int i=0;
-	int slot=-1;
+	int i, slot=-1;
 	// search slot
-	for (i=0;i<ORBISFILE_MAX_OPEN_DESCRIPTORS;i++) 
+	for(i=0;i<ORBISFILE_MAX_OPEN_DESCRIPTORS;i++) 
 	{ 
-		if(orbisFileRemoteOpenDescriptors[i]==-1) 
-		{ 
-				slot = i; 
-				break; 	
-		}
+		if(orbisFileRemoteOpenDescriptors[i]==-1) return i;
 	}
 	return slot;
 }
-int orbisOpen(const char *file, int flags, int mode)
+int orbisOpen(const char *file, int flags, int mode) 
 {
-	int ret;
-	int slot;
-	if(!file)
-	{
-		return 0x80020016;
-	}
+	if(!file) return 0x80020016;
+
+	int ret, slot;
+
 	if (strncmp(file,HOST0,sizeof(HOST0)-1)==0) 
 	{
 		slot=orbisCheckFreeRemoteDescriptor();
+		if(slot != lastopenedslot)
+			debugNetPrintf(INFO,"orbisCheckFreeRemoteDescriptor = %d\n",slot);
+
 		if(slot>=0)
 		{
+			lastopenedslot = slot;
 			ret=ps4LinkOpen(file,flags,mode);
+			//debugNetPrintf(DEBUG,"[ORBISFILE] ps4LinkOpen, slot=%d ret=%d, lastopenedslot:%d\n",slot, ret, lastopenedslot); // 0 11
 			if(ret>0)
 			{
 				orbisFileRemoteOpenDescriptors[slot]=ret;
-				debugNetPrintf(DEBUG,"[ORBISFILE] slot=%d fd=%d\n",slot,ret);
+			}
+			else
+			{
+				debugNetPrintf(ERROR,"[ORBISFILE] slot=%d fd=%d\n",slot,ret);
 			}
 			return ret;
 		}
@@ -82,41 +76,35 @@ int orbisOpen(const char *file, int flags, int mode)
 }
 int orbisClose(int fd)
 {
-	int ret=0;
-	int slot=-1;
-	if(!fd)
-	{
-		return 0x80020009;
-	}
-	slot=orbisCheckSlotByFd(fd);
+	if(!fd) return 0x80020009;
+
+	int ret,
+		slot=orbisCheckSlotByFd(fd);
+	//debugNetPrintf(ERROR,"orbisCheckSlotByFd(%d) = %d\n", fd, slot); // 11 0
 	if(slot>=0)
 	{
-		debugNetPrintf(DEBUG,"[ORBISFILE] orbisClose slot=%d fd=%d\n",slot,ret);
-		
 		ret=ps4LinkClose(fd);
-		orbisFileRemoteOpenDescriptors[slot]=-1;
-		
+		if(ret)
+			debugNetPrintf(DEBUG,"[ORBISFILE] orbisClose slot=%d fd=%d ret=%d\n",slot,fd,ret);
+		else
+			orbisFileRemoteOpenDescriptors[slot]=-1;
+
 		return ret;
 	}
 	return sceKernelClose(fd);
 }
 int orbisRead(int fd, void *data, size_t size)
 {
-	int ret;
-	int slot=-1;
-	if(!fd)
-	{
-		return 0x80020009;
-	}
-	if(!data)
-	{
-		return 0x8002000e;
-	}
-	slot=orbisCheckSlotByFd(fd);
+	if(!fd)	  return 0x80020009;
+	if(!data) return 0x8002000e;
+
+	int ret,
+		slot=orbisCheckSlotByFd(fd);
 	if(slot>=0)
 	{
 		ret=ps4LinkRead(fd,data,size);
-		debugNetPrintf(DEBUG,"[ORBISFILE] orbisRead slot=%d fd=%d byteread=%d\n",slot,fd,ret);
+		if(ret != size)
+			debugNetPrintf(DEBUG,"[ORBISFILE] orbisRead slot=%d fd=%d byteread=%d\n",slot,fd,ret);
 		
 		return ret;
 	}
@@ -124,21 +112,16 @@ int orbisRead(int fd, void *data, size_t size)
 }
 int orbisWrite(int fd, const void *data, size_t size)
 {
-	int ret;
-	int slot=-1;
-	if(!fd)
-	{
-		return 0x80020009;
-	}
-	if(!data)
-	{
-		return 0x8002000e;
-	}
-	slot=orbisCheckSlotByFd(fd);
+	if(!fd)	  return 0x80020009;
+	if(!data) return 0x8002000e;
+
+	int ret,
+		slot=orbisCheckSlotByFd(fd);
 	if(slot>=0)
 	{
 		ret=ps4LinkWrite(fd,data,size);
-		debugNetPrintf(DEBUG,"[ORBISFILE] orbisWrite slot=%d fd=%d bytewrite=%d\n",slot,fd,ret);
+		if(ret != size)
+			debugNetPrintf(DEBUG,"[ORBISFILE] orbisWrite slot=%d fd=%d bytewrite=%d\n",slot,fd,ret);
 		
 		return ret;
 	}
@@ -146,17 +129,16 @@ int orbisWrite(int fd, const void *data, size_t size)
 }
 int orbisLseek(int fd, int offset, int whence)
 {
-	int ret;
-	int slot=-1;
-	if(!fd)
-	{
-		return 0x80020009;
-	}
-	slot=orbisCheckSlotByFd(fd);
+	if(!fd)	return 0x80020009;
+
+	int ret,
+		slot=orbisCheckSlotByFd(fd);
 	if(slot>=0)
 	{
+		//debugNetPrintf(DEBUG,"[ORBISFILE] offset=%d,whence=%d\n",offset,whence);
 		ret=ps4LinkLseek(fd,offset,whence);
-		debugNetPrintf(DEBUG,"[ORBISFILE] orbisLseek slot=%d fd=%d ret=%d\n",slot,fd,ret);
+		if(ret<0)
+			debugNetPrintf(DEBUG,"[ORBISFILE] orbisLseek slot=%d fd=%d ret=%d\n",slot,fd,ret);
 		
 		return ret;
 	}
@@ -164,23 +146,19 @@ int orbisLseek(int fd, int offset, int whence)
 }
 int orbisDopen(const char *path)
 {
-	int ret;
-	int slot;
-	if(!path)
-	{
-		return 0x80020016;
-	}
+	if(!path) return 0x80020016;
+
+	int ret, slot;
+
 	if (strncmp(path,HOST0,sizeof(HOST0)-1)==0) 
 	{
-		
 		slot=orbisCheckFreeRemoteDescriptor();
 		if(slot>=0)
 		{
 			ret=ps4LinkDopen(path);
 			if(ret>0)
-			{
 				orbisFileRemoteOpenDescriptors[slot]=ret;
-			}
+
 			debugNetPrintf(DEBUG,"[ORBISFILE] orbisDopen slot=%d dfd=%d\n",slot,ret);
 			return ret;
 		}
@@ -204,7 +182,6 @@ int orbisDclose(int dfd)
 	slot=orbisCheckSlotByFd(dfd);
 	if(slot>=0)
 	{
-		
 		ret=ps4LinkDclose(dfd);
 		debugNetPrintf(DEBUG,"[ORBISFILE] orbisClose slot=%d dfd=%d \n",slot,dfd);
 		orbisFileRemoteOpenDescriptors[slot]=-1;
@@ -272,7 +249,7 @@ int orbisMkdir(const char* path, int mode)
 */
 size_t _orbisFile_lastopenFile_size;
 
-char * orbisFileGetFileContent(const char *filename)
+unsigned char * orbisFileGetFileContent(const char *filename)
 {
 	_orbisFile_lastopenFile_size = -1;  // reset exported variable
 
@@ -294,7 +271,7 @@ char * orbisFileGetFileContent(const char *filename)
 		return NULL;
 	}
 
-	char* pText=malloc(sizeof(char)*fileSize+1);
+	unsigned char *pText=malloc(sizeof(char)*fileSize+1);
 	if(!pText)
 	{
 		debugNetPrintf(DEBUG,"[ORBISFILE] Failed to allocate %db\n", fileSize+1);
@@ -323,9 +300,9 @@ void orbisFileFinish()
 	int i;
 	for(i=0;i<ORBISFILE_MAX_OPEN_DESCRIPTORS;i++)
 	{
-		
 		if(orbisFileRemoteOpenDescriptors[i]>0)
 		{
+			debugNetPrintf(DEBUG,"orbisFileRemoteOpenDescriptors[%d] = %d, closing\n", i, orbisFileRemoteOpenDescriptors[i]);
 			ps4LinkClose(orbisFileRemoteOpenDescriptors[i]);
 		}
 		orbisFileRemoteOpenDescriptors[i]=-1;
