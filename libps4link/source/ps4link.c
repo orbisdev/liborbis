@@ -302,7 +302,8 @@ int ps4LinkIsFinished()
  */
 void ps4LinkFinish()
 {
-	if(!external_conf)
+	if(!external_conf
+	&& configuration)
 	{
 		configuration->ps4link_fileio_active=0;
 		configuration->ps4link_cmdsio_active=0;
