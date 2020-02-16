@@ -22,7 +22,7 @@ int orbisDopen(const char *path);
 int orbisDclose(int dfd);
 int orbisDread(int dfd, struct dirent *entry);
 int orbisMkdir(const char *path, int mode);
-char * orbisFileGetFileContent(const char *file);
+unsigned char * orbisFileGetFileContent(const char *file);
 int orbisFileInit();
 void orbisFileFinish();
 	

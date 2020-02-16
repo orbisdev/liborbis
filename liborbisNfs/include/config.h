@@ -154,3 +154,8 @@
 
 /* Define for large files, on AIX-style hosts. */
 /* #undef _LARGE_FILES */
+
+#ifdef __PS4__
+#include <debugnet.h>
+#include <sce/net.h>
+#endif
