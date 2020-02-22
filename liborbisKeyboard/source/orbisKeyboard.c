@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <userservice.h>
 #include <sysmodule.h>
+#include <unistd.h>
 
 #include "orbisKeyboard.h"
 #include "kb.h"
