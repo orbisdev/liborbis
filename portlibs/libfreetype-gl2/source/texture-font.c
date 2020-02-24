@@ -32,7 +32,16 @@ const struct {
 } FT_Errors[] =
 #include FT_ERRORS_H
 
+
+#if defined(__PS4__)
 #include <debugnet.h>
+
+#else
+#define  debugNetPrintf  fprintf
+#define  DEBUG  stderr
+#define  INFO   stdout
+
+#endif
 
 // ------------------------------------------------- texture_font_load_face ---
 static int

@@ -8,8 +8,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include "edtaa3func.h"
+#include <stdio.h>
 
+
+#if defined(__PS4__)
 #include <debugnet.h>
+
+#else
+#define  debugNetPrintf  fprintf
+#define  DEBUG  stderr
+#define  INFO   stdout
+
+#endif
 
 double *
 make_distance_mapd( double *data, unsigned int width, unsigned int height )

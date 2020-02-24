@@ -17,11 +17,12 @@
 #if defined(__PS4__)
   #include <debugnet.h>
   #include <orbisFile.h>
-  // each orbisFileGetFileContent() call will update filesize!
-  extern size_t _orbisFile_lastopenFile_size;
 
 #else
 
+#define  debugNetPrintf  fprintf
+#define  DEBUG  stderr
+#define  INFO   stdout
 
 // ------------------------------------------------------------ file_exists ---
 static int
@@ -36,6 +37,10 @@ file_exists( const char * filename )
     return 0;
 }
 #endif
+
+unsigned char *orbisFileGetFileContent( const char *filename );
+// each orbisFileGetFileContent() call will update filesize!
+extern size_t _orbisFile_lastopenFile_size;
 
 
 // ------------------------------------------------------- font_manager_new ---
