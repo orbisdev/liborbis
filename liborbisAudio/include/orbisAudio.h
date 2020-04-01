@@ -6,8 +6,8 @@
 #pragma once
 #include <stdint.h>
 
-#include <types/kernel.h>
-
+//#include <types/kernel.h>  // ScePthread and (not really needed) "friends"
+#include <pthread.h>         // posix threads and standard friends
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,8 @@ typedef void (*OrbisAudioCallback)(OrbisAudioSample *buffer,unsigned int samples
 
 typedef struct OrbisAudioChannel
 {
-	ScePthread threadHandle;
+	//ScePthread threadHandle;
+	pthread_t threadHandle;
 	int audioHandle;
 	unsigned int leftVol;
 	unsigned int rightVol;
