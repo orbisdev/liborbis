@@ -27,4 +27,4 @@ install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
 	@mkdir -p $(Ps4Sdk)/include/freetype-gl2
 	@cp include/*.h $(Ps4Sdk)/include/freetype-gl2
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"
