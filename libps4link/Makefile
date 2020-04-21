@@ -26,4 +26,4 @@ install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
 	@cp include/ps4link.h $(Ps4Sdk)/include
 	@cp include/jailbreak.h $(Ps4Sdk)/include
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"

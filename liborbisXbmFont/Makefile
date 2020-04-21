@@ -26,4 +26,4 @@ install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
 	@cp include/orbisXbmFont.h $(Ps4Sdk)/include
 	@cp include/xbm_font.h $(Ps4Sdk)/include
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"

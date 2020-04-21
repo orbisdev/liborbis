@@ -29,4 +29,4 @@ install:
 	@cp include/pnglibconf.h $(Ps4Sdk)/include
 	@cp include/pngstruct.h $(Ps4Sdk)/include
 	@cp include/pnginfo.h $(Ps4Sdk)/include
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"

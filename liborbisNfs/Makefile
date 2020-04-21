@@ -27,7 +27,7 @@ $(OutPath)/$(TargetFile).a: $(ObjectFiles)
 
 install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
-	@mkdir $(Ps4Sdk)/include/nfsc
+	@mkdir -p $(Ps4Sdk)/include/nfsc
 	@cp include/nfsc/*.h $(Ps4Sdk)/include/nfsc
 	@cp include/orbisNfs.h $(Ps4Sdk)/include
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"

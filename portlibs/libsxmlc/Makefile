@@ -26,4 +26,4 @@ install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
 	@cp include/sxmlc.h $(Ps4Sdk)/include
 	@cp include/sxmlsearch.h $(Ps4Sdk)/include
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"

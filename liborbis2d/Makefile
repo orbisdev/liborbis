@@ -25,4 +25,4 @@ $(OutPath)/$(TargetFile).a: $(ObjectFiles)
 install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
 	@cp include/orbis2d.h $(Ps4Sdk)/include
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"

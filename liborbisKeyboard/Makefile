@@ -26,4 +26,4 @@ install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
 	@cp include/orbisKeyboard.h $(Ps4Sdk)/include
 	@cp include/kb.h $(Ps4Sdk)/include
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"

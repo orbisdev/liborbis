@@ -26,4 +26,4 @@ install:
 	@cp $(OutPath)/$(TargetFile).a $(Ps4Sdk)/lib
 	@mkdir -p $(Ps4Sdk)/include/MiniAPI
 	@cp include/*.h $(Ps4Sdk)/include/MiniAPI
-	@echo "Installed!"
+	@echo "$(TargetFile) Installed!"
