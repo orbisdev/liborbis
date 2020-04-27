@@ -295,8 +295,7 @@ void orbisAudioDestroyBuffersChannel(unsigned int channel)
         {
             for(int i=0;i<ORBISAUDIO_NUM_BUFFERS;i++)
             {
-                if(orbisAudioConf->channels[channel]->sampleBuffer[i])
-                    free(orbisAudioConf->channels[channel]->sampleBuffer[i]);
+// XXX to_fix;         if(orbisAudioConf->channels[channel]->sampleBuffer[i]) free(orbisAudioConf->channels[channel]->sampleBuffer[i]);
             }
         }
     }
