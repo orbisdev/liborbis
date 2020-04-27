@@ -38,6 +38,8 @@
 #define IFNAMSIZ 255
 #endif
 
+#include <debugnet.h>
+
 #include "libnfs-zdr.h"
 #include "libnfs-raw-nfs.h"
 #include "libnfs-raw-nfs4.h"
@@ -211,7 +213,7 @@ void nfs_set_error(struct nfs_context *nfs, char *error_string, ...)
 #define RPC_LOG(rpc, level, format, ...) \
 	do { \
 		if (level <= rpc->debug) { \
-			fprintf(stderr, "libnfs:%d " format "\n", level, ## __VA_ARGS__); \
+			debugNetPrintf(DEBUG, "libnfs:%d " format "\n", level, ## __VA_ARGS__); \
 		} \
 	} while (0)
 
