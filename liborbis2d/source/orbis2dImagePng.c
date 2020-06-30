@@ -163,41 +163,9 @@ exit_error:
 
 Orbis2dTexture *orbis2dLoadPngFromHost_v2(const char *path)
 {
-	int fd;             // descriptor to manage file from host0
-	int filesize;       // variable to control file size
-	uint8_t *buf=NULL;  // buffer for read from host0 file
+	uint8_t *buf=DataFromFile(path, 0);
 
-	// we open file in read only from host0 ps4sh include the full path with host0:/.......
-	fd=ps4LinkOpen(path,O_RDONLY,0);
-
-	if(fd<0)  //If we can't open file from host0 print  the error and return
-	{
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkOpen returned error %d\n",fd);
-		return NULL;
-	}
-	filesize=ps4LinkLseek(fd,0,SEEK_END);  // Seek to end to get file size
-	if(filesize<0)                         // If we get an error print it and return
-	{
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkSeek returned error %d\n",fd);
-		ps4LinkClose(fd);
-		return NULL;
-	}
-
-	ps4LinkLseek(fd,0,SEEK_SET);  // Seek back to start
-	buf=malloc(filesize);         // Reserve memory for read buffer
-	if(!buf)
-		return NULL;
-
-	int numread=ps4LinkRead(fd,buf,filesize);  //Read filsesize bytes to buf
-	ps4LinkClose(fd);  //Close file
-
-	if(numread!=filesize)  //if we don't get filesize bytes we are in trouble
-	{
-		debugNetPrintf(DEBUG,"[PS4LINK] ps4LinkRead returned error %d\n",numread);
-		return NULL;
-	}
-
-	return orbis2dLoadPngFromBuffer(buf);  //create png from buf
+    return orbis2dLoadPngFromBuffer(buf);  // create png from buf
 }
 
 #include <orbisFile.h>

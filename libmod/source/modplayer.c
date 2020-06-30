@@ -111,8 +111,8 @@ static int m_TrackDat_num;
 static TrackData *m_TrackDat;	// Stores info for each track being played
 static RowData *m_CurrentRow;	// Pointer to the current row being played
 static int m_bPlaying;		// Set to true when a mod is being played
-static u8 *data;
-int size = 0;
+static u8 *data = NULL;
+
 //////////////////////////////////////////////////////////////////////
 // These are the public functions
 //////////////////////////////////////////////////////////////////////
@@ -183,8 +183,7 @@ void Mod_FreeTune()
 
     // Tear down all the mallocs done
     //free the file itself
-    if (data)
-	free(data);
+    if (data) free(data), data = NULL;
     // Free patterns
     for (i = 0; i < m_Patterns_num; i++) {
 	for (row = 0; row < 64; row++)
@@ -251,25 +250,11 @@ int Mod_Load(char *filename)
     int index = 0;
     int numsamples;
     char modname[21];
-    int fd;	
-    if ((fd = ps4LinkOpen(filename, O_RDONLY, 0)) > 0) {
-	//  opened file, so get size now
-	size = ps4LinkLseek(fd, 0, SEEK_END);
-	ps4LinkLseek(fd, 0, SEEK_SET);
-	data = (unsigned char *) malloc(size + 8);
-	memset(data, 0, size + 8);
-	if (data != 0) {	// Read file in
-	    ps4LinkRead(fd, data, size);
-	} else {
-	    printf("Error allocing\n");
-	    ps4LinkClose(fd);
-	    return 0;
-	}
-	// Close file
-	ps4LinkClose(fd);
-    } else {			//if we couldn't open the file
-	return 0;
-    }
+
+    // allocate 8 bytes more than readed
+    data = DataFromFile(filename, 8);
+    if(!data)
+        return 0;
 
     //BPM_RATE = 130;
 	BPM_RATE = 125; //PAL

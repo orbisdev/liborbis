@@ -68,6 +68,7 @@ typedef struct OrbisDirEntry
 	char name[256];
 }OrbisDirEntry;
 
+uint8_t *DataFromFile(const char *path, int additional_size);
 
 int ps4LinkOpen(const char *file, int flags, int mode);
 int ps4LinkClose(int fd);
